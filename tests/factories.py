@@ -2,19 +2,25 @@
 Test Factory to make fake objects for testing
 """
 
+from datetime import date, timedelta
 import factory
-from service.models import YourResourceModel
+from factory.fuzzy import FuzzyChoice, FuzzyDate, FuzzyDecimal
+from service.models import Promotion, PromotionType
 
 
-class YourResourceModelFactory(factory.Factory):
-    """Creates fake pets that you don't have to feed"""
+class PromotionFactory(factory.Factory):
+    """Creates fake promotions for testing"""
 
     class Meta:  # pylint: disable=too-few-public-methods
         """Maps factory to data model"""
 
-        model = YourResourceModel
+        model = Promotion
 
     id = factory.Sequence(lambda n: n)
-    name = factory.Faker("first_name")
-
-    # Todo: Add your other attributes here...
+    name = factory.Faker("catch_phrase")
+    promotion_type = FuzzyChoice(choices=list(PromotionType))
+    value = FuzzyDecimal(1, 100, 2)
+    product_id = FuzzyChoice(choices=[None, 101, 202, 303, 404])
+    start_date = FuzzyDate(date(2026, 1, 1), date(2026, 12, 31))
+    end_date = factory.LazyAttribute(lambda o: o.start_date + timedelta(days=30))
+    active = FuzzyChoice(choices=[True, False])
