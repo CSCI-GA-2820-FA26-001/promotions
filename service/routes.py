@@ -44,3 +44,18 @@ def index():
 ######################################################################
 
 # Todo: Place your REST API code here ...
+
+
+# DELETE A PROMOTIN
+
+
+@app.route("/promotions/<int:promotion_id>", methods=["DELETE"])
+def delete_promotion(promotion_id):
+    """Delete a Promotion"""
+    app.logger.info("Request to delete Promotion with id: %s", promotion_id)
+
+    promotion = Promotion.find(promotion_id)
+    if promotion:
+        promotion.delete()
+
+    return "", status.HTTP_204_NO_CONTENT
