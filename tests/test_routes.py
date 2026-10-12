@@ -25,6 +25,7 @@ from unittest import TestCase
 from wsgi import app
 from service.common import status
 from service.models import db, Promotion
+from tests.factories import PromotionFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -73,3 +74,28 @@ class TestPromotionService(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
     # Todo: Add your test cases here...
+
+    def test_list_promotions(self):
+        """It should be able to List all Promotions"""
+        promotions = []
+
+        for _ in range(3):
+            promotion = PromotionFactory()
+            promotion.create()
+            promotions.append(promotion)
+
+        response = self.client.get("/promotions")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.get_json()
+        self.assertEqual(len(data), 3)
+
+    def test_list_promotions_empty(self):
+        """It should return an empty list when there are no Promotions"""
+        response = self.client.get("/promotions")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.get_json()
+        self.assertEqual(data, [])
