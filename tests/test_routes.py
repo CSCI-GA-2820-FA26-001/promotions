@@ -75,6 +75,22 @@ class TestPromotionService(TestCase):
 
     # Todo: Add your test cases here...
 
+    def test_delete_promotion(self):
+        """It should Delete a Promotion"""
+        promotion = PromotionFactory()
+        promotion.create()
+        self.assertIsNotNone(promotion.id)
+
+        response = self.client.delete(f"/promotions/{promotion.id}")
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertIsNone(Promotion.find(promotion.id))
+
+    def test_delete_empty_promotion(self):
+        """It should remove a Promotion that does not exist"""
+        response = self.client.delete("/promotions/0")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
     def test_list_promotions(self):
         """It should be able to List all Promotions"""
         promotions = []
