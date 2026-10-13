@@ -46,7 +46,7 @@ def index():
 # Todo: Place your REST API code here ...
 
 
-# DELETE A PROMOTIN
+# DELETE A PROMOTION
 
 
 @app.route("/promotions/<int:promotion_id>", methods=["DELETE"])
@@ -59,3 +59,17 @@ def delete_promotion(promotion_id):
         promotion.delete()
 
     return "", status.HTTP_204_NO_CONTENT
+
+
+# LIST ALL PROMOTIONS
+
+
+@app.route("/promotions", methods=["GET"])
+def list_promotions():
+    """List all Promotions"""
+    app.logger.info("Request to list all Promotions")
+
+    promotions = Promotion.all()
+    results = [promotion.serialize() for promotion in promotions]
+
+    return jsonify(results), status.HTTP_200_OK

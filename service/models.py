@@ -15,6 +15,8 @@ logger = logging.getLogger("flask.app")
 # Create the SQLAlchemy object to be initialized later in init_db()
 db = SQLAlchemy()
 
+NAME_MAX_LENGTH = 63
+
 
 class DataValidationError(Exception):
     """Used for an data validation errors when deserializing"""
@@ -25,7 +27,7 @@ class PromotionType(Enum):
 
     PERCENTAGE_OFF = "PERCENTAGE_OFF"  # value is a percent, e.g. 20 = 20% off
     AMOUNT_OFF = "AMOUNT_OFF"  # value is a currency amount, e.g. 20 = $20 off
-    BOGO = "BOGO"  # buy one get one free
+    BOGO = "BOGO"  # buy one get one free, value must be 0
 
 
 class Promotion(db.Model):  # pylint: disable=too-many-instance-attributes
@@ -39,7 +41,7 @@ class Promotion(db.Model):  # pylint: disable=too-many-instance-attributes
     # Table Schema
     ##################################################
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(63), nullable=False)
+    name = db.Column(db.String(NAME_MAX_LENGTH), nullable=False)
     promotion_type = db.Column(db.Enum(PromotionType), nullable=False)
     value = db.Column(db.Numeric(10, 2), nullable=False)
     product_id = db.Column(db.Integer, nullable=True)  # None = store-wide
@@ -217,6 +219,10 @@ class Promotion(db.Model):  # pylint: disable=too-many-instance-attributes
 def _parse_name(value):
     if not isinstance(value, str) or not value.strip():
         raise DataValidationError("Invalid Promotion: name must be a non-empty string")
+    if len(value) > NAME_MAX_LENGTH:
+        raise DataValidationError(
+            f"Invalid Promotion: name must be at most {NAME_MAX_LENGTH} characters"
+        )
     return value
 
 
@@ -236,6 +242,8 @@ def _parse_value(value, promotion_type):
         raise DataValidationError("Invalid Promotion: value must not be negative")
     if promotion_type == PromotionType.PERCENTAGE_OFF and value > 100:
         raise DataValidationError("Invalid Promotion: PERCENTAGE_OFF value must not exceed 100")
+    if promotion_type == PromotionType.BOGO and value != 0:
+        raise DataValidationError("Invalid Promotion: BOGO value must be 0")
     return Decimal(str(value))
 
 

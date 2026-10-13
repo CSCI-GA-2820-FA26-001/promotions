@@ -90,3 +90,28 @@ class TestPromotionService(TestCase):
         """It should remove a Promotion that does not exist"""
         response = self.client.delete("/promotions/0")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_list_promotions(self):
+        """It should be able to List all Promotions"""
+        promotions = []
+
+        for _ in range(3):
+            promotion = PromotionFactory()
+            promotion.create()
+            promotions.append(promotion)
+
+        response = self.client.get("/promotions")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.get_json()
+        self.assertEqual(len(data), 3)
+
+    def test_list_promotions_empty(self):
+        """It should return an empty list when there are no Promotions"""
+        response = self.client.get("/promotions")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.get_json()
+        self.assertEqual(data, [])
