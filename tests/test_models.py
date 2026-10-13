@@ -256,7 +256,7 @@ class TestPromotionModel(TestCase):
     def test_deserialize_bad_values(self):
         """It should not deserialize fields with the wrong type or format"""
         bad_values = {
-            "name": [None, 123, ""],
+            "name": [None, 123, "", "a" * 64],
             "promotion_type": ["FREE_LUNCH", 1, None],
             "value": ["twenty", None, True, -5],
             "product_id": ["abc", 1.5, True],
@@ -270,6 +270,13 @@ class TestPromotionModel(TestCase):
                 data[field] = value
                 with self.subTest(field=field, value=value):
                     self.assertRaises(DataValidationError, Promotion().deserialize, data)
+
+    def test_deserialize_name_at_max_length(self):
+        """It should allow a name that is exactly 63 characters"""
+        data = PromotionFactory().serialize()
+        data["name"] = "a" * 63
+        promotion = Promotion().deserialize(data)
+        self.assertEqual(promotion.name, data["name"])
 
     def test_deserialize_end_date_before_start_date(self):
         """It should not deserialize a Promotion that ends before it starts"""
@@ -297,6 +304,21 @@ class TestPromotionModel(TestCase):
         data["value"] = 150
         promotion = Promotion().deserialize(data)
         self.assertEqual(promotion.value, Decimal("150"))
+
+    def test_deserialize_bogo_with_zero_value(self):
+        """It should deserialize a BOGO Promotion with a value of 0"""
+        data = PromotionFactory(promotion_type=PromotionType.BOGO).serialize()
+        data["value"] = 0
+        promotion = Promotion().deserialize(data)
+        self.assertEqual(promotion.value, Decimal("0"))
+
+    def test_deserialize_bogo_with_nonzero_value(self):
+        """It should not deserialize a BOGO Promotion with a value other than 0"""
+        for value in [1, 0.5, 100]:
+            data = PromotionFactory(promotion_type=PromotionType.BOGO).serialize()
+            data["value"] = value
+            with self.subTest(value=value):
+                self.assertRaises(DataValidationError, Promotion().deserialize, data)
 
     ######################################################################
     #  Q U E R I E S
