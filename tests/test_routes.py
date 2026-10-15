@@ -115,3 +115,62 @@ class TestPromotionService(TestCase):
 
         data = response.get_json()
         self.assertEqual(data, [])
+
+    def test_update_promotion(self):
+        """It should update an existing Promotion"""
+        promotion = PromotionFactory()
+        promotion.create()
+        promotion_id = promotion.id
+
+        update_data = promotion.serialize()
+        update_data["name"] = "Updated Promotion"
+
+        response = self.client.put(
+            f"/promotions/{promotion_id}", json=update_data
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.get_json()["name"], "Updated Promotion")
+        self.assertEqual(Promotion.find(promotion_id).name, "Updated Promotion")
+
+    def test_update_promotion_not_found(self):
+        """It should return 404 when a Promotion does not exist"""
+        promotion = PromotionFactory()
+
+        response = self.client.put(
+            "/promotions/999999",
+            json=promotion.serialize()
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND
+        )
+        self.assertTrue(response.is_json)
+
+    def test_update_promotion_invalid_data(self):
+        """It should reject invalid Promotion data"""
+        promotion = PromotionFactory()
+        promotion.create()
+        promotion_id = promotion.id
+        original_name = promotion.name
+
+        update_data = promotion.serialize()
+        update_data["name"] = "Should Not Be Saved"
+        update_data["promotion_type"] = "PERCENTAGE_OFF"
+        update_data["value"] = 150
+
+        response = self.client.put(
+            f"/promotions/{promotion_id}",
+            json=update_data
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
+        self.assertTrue(response.is_json)
+        self.assertEqual(
+            Promotion.find(promotion_id).name,
+            original_name
+        )
