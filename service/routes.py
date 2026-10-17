@@ -21,7 +21,7 @@ This service implements a REST API that allows you to Create, Read, Update
 and Delete Promotions
 """
 
-from flask import jsonify, request, url_for, abort
+from flask import abort, jsonify
 from flask import current_app as app  # Import Flask application
 from service.models import Promotion  # noqa: F401 pylint: disable=unused-import
 from service.common import status  # HTTP Status Codes
@@ -43,7 +43,19 @@ def index():
 #  R E S T   A P I   E N D P O I N T S
 ######################################################################
 
-# Todo: Place your REST API code here ...
+@app.route("/promotions/<int:promotion_id>", methods=["GET"])
+def read_promotion(promotion_id):
+    """Read a Promotion"""
+    app.logger.info("Request to read Promotion with id: %s", promotion_id)
+
+    promotion = Promotion.find(promotion_id)
+    if promotion is None:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            description=f"Promotion with id {promotion_id} was not found",
+        )
+
+    return jsonify(promotion.serialize()), status.HTTP_200_OK
 
 
 # DELETE A PROMOTION
