@@ -69,9 +69,17 @@ class TestPromotionService(TestCase):
     ######################################################################
 
     def test_index(self):
-        """It should call the home page"""
-        resp = self.client.get("/")
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        """It should return information about the Promotions service"""
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.is_json)
+
+        data = response.get_json()
+
+        self.assertEqual(data["name"], "Promotions Service")
+        self.assertEqual(data["version"], "1.0")
+        self.assertEqual(data["url"], "/promotions")
 
     # Todo: Add your test cases here...
 
