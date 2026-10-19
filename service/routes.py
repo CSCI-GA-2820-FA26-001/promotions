@@ -46,6 +46,7 @@ def index():
 
 @app.route("/promotions", methods=["POST"])
 def create_promotion():
+    """Create a promotion from the request body."""
     if not request.is_json:
         abort(
             status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
