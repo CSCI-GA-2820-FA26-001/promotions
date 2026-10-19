@@ -19,6 +19,7 @@ Promotion API Service Test Suite
 """
 
 # pylint: disable=duplicate-code
+import json
 import os
 import logging
 from unittest import TestCase
@@ -68,6 +69,18 @@ class TestPromotionService(TestCase):
     #  P L A C E   T E S T   C A S E S   H E R E
     ######################################################################
 
+    @staticmethod
+    def _valid_create_payload():
+        """Return valid data for a create request"""
+        return {
+            "name": "Autumn Sale",
+            "promotion_type": "PERCENTAGE_OFF",
+            "value": 15,
+            "product_id": 101,
+            "start_date": "2026-10-01",
+            "end_date": "2026-10-31",
+        }
+
     def test_index(self):
         """It should return information about the Promotions service"""
         response = self.client.get("/")
@@ -81,7 +94,122 @@ class TestPromotionService(TestCase):
         self.assertEqual(data["version"], "1.0")
         self.assertEqual(data["url"], "/promotions")
 
-    # Todo: Add your test cases here...
+    def test_create_promotion(self):
+        """It should create a promotion"""
+        payload = self._valid_create_payload()
+
+        response = self.client.post("/promotions", json=payload)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        result = response.get_json()
+        self.assertIsNotNone(result["id"])
+        self.assertEqual(result["name"], payload["name"])
+        self.assertEqual(result["promotion_type"], payload["promotion_type"])
+        self.assertEqual(result["value"], 15.0)
+        self.assertEqual(result["product_id"], payload["product_id"])
+        self.assertEqual(result["start_date"], payload["start_date"])
+        self.assertEqual(result["end_date"], payload["end_date"])
+        self.assertTrue(result["active"])
+        self.assertIsNotNone(result["created_at"])
+        self.assertTrue(
+            response.headers["Location"].endswith(f"/promotions/{result['id']}")
+        )
+        self.assertIsNotNone(Promotion.find(result["id"]))
+
+    def test_create_promotion_requires_json(self):
+        """It should reject requests without JSON content type"""
+        response = self.client.post(
+            "/promotions", data="{}", content_type="text/plain"
+        )
+
+        self.assertEqual(
+            response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
+        )
+        self.assertEqual(Promotion.query.count(), 0)
+
+    def test_create_promotion_with_invalid_data(self):
+        """It should reject invalid promotion data"""
+        response = self.client.post("/promotions", json={"name": "Incomplete"})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Promotion.query.count(), 0)
+
+    def test_create_promotion_with_malformed_json(self):
+        """It should reject malformed JSON"""
+        response = self.client.post(
+            "/promotions", data='{"name":', content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Promotion.query.count(), 0)
+
+    def test_create_promotion_with_non_object_json(self):
+        """It should reject JSON bodies that are not objects"""
+        for body in [[], "not an object", 42, None]:
+            with self.subTest(body=body):
+                response = self.client.post(
+                    "/promotions",
+                    data=json.dumps(body),
+                    content_type="application/json",
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertEqual(Promotion.query.count(), 0)
+
+    def test_create_promotion_with_end_date_before_start_date(self):
+        """It should reject a promotion that ends before it starts"""
+        payload = self._valid_create_payload()
+        payload["end_date"] = "2026-09-30"
+
+        response = self.client.post("/promotions", json=payload)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Promotion.query.count(), 0)
+
+    def test_create_promotion_with_percentage_over_100(self):
+        """It should reject a percentage discount greater than 100"""
+        payload = self._valid_create_payload()
+        payload["value"] = 101
+
+        response = self.client.post("/promotions", json=payload)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Promotion.query.count(), 0)
+
+    def test_create_promotion_with_nonzero_bogo_value(self):
+        """It should reject a BOGO promotion with a nonzero value"""
+        payload = self._valid_create_payload()
+        payload["promotion_type"] = "BOGO"
+        payload["value"] = 1
+
+        response = self.client.post("/promotions", json=payload)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Promotion.query.count(), 0)
+
+    def test_create_promotion_with_invalid_promotion_type(self):
+        """It should reject an invalid promotion type"""
+        payload = self._valid_create_payload()
+        payload["promotion_type"] = "INVALID_TYPE"
+
+        response = self.client.post("/promotions", json=payload)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Promotion.query.count(), 0)
+
+    def test_create_promotion_ignores_client_managed_fields(self):
+        """It should ignore client-supplied IDs and creation timestamps"""
+        payload = self._valid_create_payload()
+        payload["id"] = 99999999
+        payload["created_at"] = "2000-01-01T00:00:00"
+
+        response = self.client.post("/promotions", json=payload)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        result = response.get_json()
+        self.assertNotEqual(result["id"], payload["id"])
+        self.assertNotEqual(result["created_at"], payload["created_at"])
+        self.assertIsNotNone(Promotion.find(result["id"]))
 
     def test_delete_promotion(self):
         """It should Delete a Promotion"""

@@ -44,7 +44,25 @@ def index():
 #  R E S T   A P I   E N D P O I N T S
 ######################################################################
 
-# Todo: Place your REST API code here ...
+@app.route("/promotions", methods=["POST"])
+def create_promotion():
+    if not request.is_json:
+        abort(
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            description="Content-Type must be application/json",
+        )
+
+    promotion = Promotion()
+    promotion.deserialize(request.get_json())
+    promotion.create()
+
+    collection_url = url_for("create_promotion", _external=True).rstrip("/")
+    location = f"{collection_url}/{promotion.id}"
+    return (
+        jsonify(promotion.serialize()),
+        status.HTTP_201_CREATED,
+        {"Location": location},
+    )
 
 
 # DELETE A PROMOTION
