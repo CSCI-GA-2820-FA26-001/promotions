@@ -211,6 +211,22 @@ class TestPromotionService(TestCase):
         self.assertNotEqual(result["created_at"], payload["created_at"])
         self.assertIsNotNone(Promotion.find(result["id"]))
 
+    def test_read_promotion(self):
+        """It should read a Promotion by ID"""
+        promotion = PromotionFactory()
+        promotion.create()
+
+        response = self.client.get(f"/promotions/{promotion.id}")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.get_json(), promotion.serialize())
+
+    def test_read_empty_promotion(self):
+        """It should return not found when the Promotion does not exist"""
+        response = self.client.get("/promotions/0")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_delete_promotion(self):
         """It should Delete a Promotion"""
         promotion = PromotionFactory()
