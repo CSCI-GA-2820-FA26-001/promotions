@@ -1,51 +1,107 @@
-# NYU DevOps Project Template
+# Promotions Service
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python](https://img.shields.io/badge/Language-Python-blue.svg)](https://python.org/)
-
-This is a skeleton you can use to start your projects.
-
-**Note:** _Feel free to overwrite this `README.md` file with the one that describes your project._
+A RESTful microservice for managing **promotions** (discounts and special offers) for an e-commerce store. It is built with Flask and SQLAlchemy and is developed using test-driven development as part of the NYU DevOps class project.
 
 ## Overview
 
-This project template contains starter code for your class project. The `/service` folder contains your `models.py` file for your model and a `routes.py` file for your service. The `/tests` folder has test case starter code for testing the model and the service separately. All you need to do is add your functionality. You can use the [lab-flask-tdd](https://github.com/nyu-devops/lab-flask-tdd) for code examples to copy from.
+A promotion describes a discount that can apply to a single product or to the whole store. The goal of this service is to provide a clean REST API to Create, Read, Update, Delete and List promotions, so that other services (such as the shopping cart or order services) can look up which promotions are running.
 
-## Automatic Setup
+### The Promotion model
 
-The best way to use this repo is to start your own repo using it as a git template. To do this just press the green **Use this template** button in GitHub and this will become the source for your repository.
+| Field            | Type     | Description                                                          |
+| ---------------- | -------- | -------------------------------------------------------------------- |
+| `id`             | integer  | Unique id, assigned by the database                                  |
+| `name`           | string   | Name of the promotion (required, max 63 characters)                  |
+| `promotion_type` | enum     | `PERCENTAGE_OFF`, `AMOUNT_OFF` or `BOGO`                             |
+| `value`          | number   | Percent or currency amount off; must be `>= 0`, `<= 100` for `PERCENTAGE_OFF`, and `0` for `BOGO` |
+| `product_id`     | integer  | Product the promotion applies to; `null` means store-wide            |
+| `start_date`     | date     | First day the promotion runs (ISO format, inclusive)                 |
+| `end_date`       | date     | Last day the promotion runs (inclusive, must not be before the start)|
+| `active`         | boolean  | Whether the promotion is enabled (defaults to `true`)                |
+| `created_at`     | datetime | Set automatically                                                    |
+| `updated_at`     | datetime | Set automatically                                                    |
 
-## Manual Setup
+### API endpoints
 
-You can also clone this repository and then copy and paste the starter code into your project repo folder on your local computer. Be careful not to copy over your own `README.md` file so be selective in what you copy.
+| Method   | URL                | Description                                                   |
+| -------- | ------------------ | ------------------------------------------------------------- |
+| `GET`    | `/`                | Service name, version and URL of the promotions collection    |
+| `POST`   | `/promotions`      | Create a promotion; returns `201` with a `Location` header    |
+| `GET`    | `/promotions`      | List all promotions (the whole collection)                    |
+| `GET`    | `/promotions/<id>` | Read a single promotion; `404` if it does not exist           |
+| `PUT`    | `/promotions/<id>` | Update a promotion; `404` if it does not exist                |
+| `DELETE` | `/promotions/<id>` | Delete a promotion; idempotent, always returns `204`          |
 
-There are 4 hidden files that you will need to copy manually if you use the Mac Finder or Windows Explorer to copy files from this folder into your repo folder.
+There are three `GET` routes because they return different things: `/` describes the service, `/promotions` returns every promotion as a JSON list, and `/promotions/<id>` returns one promotion. All endpoints are implemented.
 
-These should be copied using a bash shell as follows:
+Request bodies for `POST` and `PUT` are JSON using the fields above. `id`, `created_at` and `updated_at` are managed by the service and ignored if sent. `product_id` and `active` are optional.
+
+Example:
 
 ```bash
-    cp .gitignore  ../<your_repo_folder>/
-    cp .flaskenv ../<your_repo_folder>/
-    cp .gitattributes ../<your_repo_folder>/
+curl -X POST http://localhost:8080/promotions \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Summer Sale", "promotion_type": "PERCENTAGE_OFF", "value": 20, "start_date": "2026-06-01", "end_date": "2026-08-31"}'
 ```
+
+### Errors
+
+Errors are returned as JSON with `status`, `error` and `message` fields.
+
+| Status | When                                                                               |
+| ------ | ---------------------------------------------------------------------------------- |
+| `400`  | Invalid or missing data (bad type, `value` rules violated, `end_date` before `start_date`, malformed body) |
+| `404`  | Promotion id not found (read and update)                                           |
+| `405`  | HTTP method not allowed for the URL                                                |
+| `415`  | `Content-Type` is not `application/json`                                           |
+| `500`  | Unexpected server error                                                            |
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3
+- A PostgreSQL database (the included VS Code dev container sets this up for you)
+
+The easiest way to get a working environment is to open the repo in VS Code and choose **Reopen in Container**.
+
+### Setup
+
+```bash
+make install           # install dependencies
+cp dot-env-example .env  # optional: environment variables for Flask
+```
+
+The database connection is read from the `DATABASE_URI` environment variable (see `service/config.py`).
+
+### Running
+
+```bash
+make run               # start the service on http://localhost:8080
+make test              # run the unit tests
+make lint              # run flake8 and pylint
+```
+
+Run `make help` to see all available targets, including the Docker and Kubernetes (K3D) deployment targets.
 
 ## Contents
 
-The project contains the following:
-
 ```text
-.gitignore          - this will ignore vagrant and other metadata files
 .flaskenv           - Environment variables to configure Flask
-.gitattributes      - File to gix Windows CRLF issues
-.devcontainers/     - Folder with support for VSCode Remote Containers
+.gitattributes      - File to fix Windows CRLF issues
+.devcontainer/      - Support for VSCode Remote Containers
 dot-env-example     - copy to .env to use environment variables
-pyproject.toml      - Poetry list of Python libraries required by your code
+Pipfile             - list of Python libraries required by the code
+Makefile            - common development and deployment tasks
+Procfile            - gunicorn process definition
+setup.cfg           - tool configuration
+wsgi.py             - WSGI entry point for the service
 
 service/                   - service python package
 ├── __init__.py            - package initializer
 ├── config.py              - configuration parameters
-├── models.py              - module with business models
-├── routes.py              - module with service routes
+├── models.py              - Promotion model, validation and database queries
+├── routes.py              - REST API routes
 └── common                 - common code package
     ├── cli_commands.py    - Flask command to recreate all tables
     ├── error_handlers.py  - HTTP error handling code
@@ -56,14 +112,10 @@ tests/                     - test cases package
 ├── __init__.py            - package initializer
 ├── factories.py           - Factory for testing with fake objects
 ├── test_cli_commands.py   - test suite for the CLI
-├── test_models.py         - test suite for business models
+├── test_models.py         - test suite for the Promotion model
 └── test_routes.py         - test suite for service routes
 ```
 
-## License
+## Contributing
 
-Copyright (c) 2016, 2025 [John Rofrano](https://www.linkedin.com/in/JohnRofrano/). All rights reserved.
-
-Licensed under the Apache License. See [LICENSE](LICENSE)
-
-This repository is part of the New York University (NYU) masters class: **CSCI-GA.2820-001 DevOps and Agile Methodologies** created and taught by [John Rofrano](https://cs.nyu.edu/~rofrano/), Adjunct Instructor, NYU Courant Institute, Graduate Division, Computer Science, and NYU Stern School of Business.
+Work is tracked as GitHub issues using the **User Story** template. Create a branch per story, add tests first, and make sure `make test` and `make lint` pass before opening a pull request.
