@@ -23,15 +23,38 @@ A promotion describes a discount that can apply to a single product or to the wh
 
 ### API endpoints
 
-| Method   | URL                        | Description                                        | Status |
-| -------- | -------------------------- | -------------------------------------------------- | ------ |
-| `GET`    | `/promotions`              | List all promotions                                | Done   |
-| `DELETE` | `/promotions/<id>`         | Delete a promotion (idempotent, always returns 204)| Done   |
-| `POST`   | `/promotions`              | Create a promotion                                 | Planned |
-| `GET`    | `/promotions/<id>`         | Read a promotion                                   | Planned |
-| `PUT`    | `/promotions/<id>`         | Update a promotion                                 | Planned |
+| Method   | URL                | Description                                                   |
+| -------- | ------------------ | ------------------------------------------------------------- |
+| `GET`    | `/`                | Service name, version and URL of the promotions collection    |
+| `POST`   | `/promotions`      | Create a promotion; returns `201` with a `Location` header    |
+| `GET`    | `/promotions`      | List all promotions (the whole collection)                    |
+| `GET`    | `/promotions/<id>` | Read a single promotion; `404` if it does not exist           |
+| `PUT`    | `/promotions/<id>` | Update a promotion; `404` if it does not exist                |
+| `DELETE` | `/promotions/<id>` | Delete a promotion; idempotent, always returns `204`          |
 
-The model also already supports queries by name, product, promotion type, active status, store-wide promotions, and promotions running on a given date, which are intended to back list filters on `GET /promotions`.
+There are three `GET` routes because they return different things: `/` describes the service, `/promotions` returns every promotion as a JSON list, and `/promotions/<id>` returns one promotion. All endpoints are implemented.
+
+Request bodies for `POST` and `PUT` are JSON using the fields above. `id`, `created_at` and `updated_at` are managed by the service and ignored if sent. `product_id` and `active` are optional.
+
+Example:
+
+```bash
+curl -X POST http://localhost:8080/promotions \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Summer Sale", "promotion_type": "PERCENTAGE_OFF", "value": 20, "start_date": "2026-06-01", "end_date": "2026-08-31"}'
+```
+
+### Errors
+
+Errors are returned as JSON with `status`, `error` and `message` fields.
+
+| Status | When                                                                               |
+| ------ | ---------------------------------------------------------------------------------- |
+| `400`  | Invalid or missing data (bad type, `value` rules violated, `end_date` before `start_date`, malformed body) |
+| `404`  | Promotion id not found (read and update)                                           |
+| `405`  | HTTP method not allowed for the URL                                                |
+| `415`  | `Content-Type` is not `application/json`                                           |
+| `500`  | Unexpected server error                                                            |
 
 ## Getting Started
 
@@ -70,11 +93,14 @@ Run `make help` to see all available targets, including the Docker and Kubernete
 dot-env-example     - copy to .env to use environment variables
 Pipfile             - list of Python libraries required by the code
 Makefile            - common development and deployment tasks
+Procfile            - gunicorn process definition
+setup.cfg           - tool configuration
+wsgi.py             - WSGI entry point for the service
 
 service/                   - service python package
 ├── __init__.py            - package initializer
 ├── config.py              - configuration parameters
-├── models.py              - Promotion model
+├── models.py              - Promotion model, validation and database queries
 ├── routes.py              - REST API routes
 └── common                 - common code package
     ├── cli_commands.py    - Flask command to recreate all tables
