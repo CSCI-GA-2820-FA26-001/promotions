@@ -21,9 +21,16 @@ This service implements a REST API that allows you to Create, Read, Update
 and Delete Promotions
 """
 
+from datetime import date
+from decimal import Decimal, InvalidOperation
 from flask import abort, jsonify, request, url_for
 from flask import current_app as app  # Import Flask application
-from service.models import Promotion, DataValidationError, db  # noqa: F401 pylint: disable=unused-import
+from service.models import (  # noqa: F401 pylint: disable=unused-import
+    Promotion,
+    PromotionType,
+    DataValidationError,
+    db,
+)
 from service.common import status  # HTTP Status Codes
 
 
@@ -101,10 +108,11 @@ def delete_promotion(promotion_id):
 
 @app.route("/promotions", methods=["GET"])
 def list_promotions():
-    """List all Promotions"""
-    app.logger.info("Request to list all Promotions")
+    """List all Promotions, optionally filtered by query parameters"""
+    app.logger.info("Request to list Promotions")
 
-    promotions = Promotion.all()
+    filters = _parse_filters(request.args)
+    promotions = Promotion.find_by_attributes(**filters) if filters else Promotion.all()
     results = [promotion.serialize() for promotion in promotions]
 
     return jsonify(results), status.HTTP_200_OK
@@ -130,3 +138,60 @@ def update_promotion(promotion_id):
         raise
 
     return jsonify(promotion.serialize()), status.HTTP_200_OK
+
+
+######################################################################
+#  H E L P E R S
+######################################################################
+
+
+def _to_int(name, text):
+    try:
+        return int(text)
+    except ValueError:
+        abort(status.HTTP_400_BAD_REQUEST, f"{name} must be an integer")
+
+
+def _to_value(name, text):
+    try:
+        value = Decimal(text)
+    except InvalidOperation:
+        abort(status.HTTP_400_BAD_REQUEST, f"{name} must be a number")
+    if not value.is_finite():
+        abort(status.HTTP_400_BAD_REQUEST, f"{name} must be a number")
+    return value
+
+
+def _to_date(name, text):
+    try:
+        return date.fromisoformat(text)
+    except ValueError:
+        abort(status.HTTP_400_BAD_REQUEST, f"{name} must be an ISO date (YYYY-MM-DD)")
+
+
+def _to_promotion_type(name, text):
+    if text not in PromotionType.__members__:
+        abort(status.HTTP_400_BAD_REQUEST, f"{name} must be one of {list(PromotionType.__members__)}")
+    return PromotionType[text]
+
+
+def _to_bool(name, text):
+    if text.lower() not in ("true", "false"):
+        abort(status.HTTP_400_BAD_REQUEST, f"{name} must be true or false")
+    return text.lower() == "true"
+
+
+FILTER_PARSERS = {
+    "id": _to_int,
+    "promotion_type": _to_promotion_type,
+    "value": _to_value,
+    "product_id": _to_int,
+    "start_date": _to_date,
+    "end_date": _to_date,
+    "active": _to_bool,
+}
+
+
+def _parse_filters(args):
+    """Convert supported query parameters to column types; unknown ones are ignored"""
+    return {name: parser(name, args[name]) for name, parser in FILTER_PARSERS.items() if name in args}
