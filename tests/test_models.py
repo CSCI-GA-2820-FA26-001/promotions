@@ -382,3 +382,29 @@ class TestPromotionModel(TestCase):
             promotion.create()
         found = Promotion.find_active_on(date(2026, 6, 15))
         self.assertEqual({p.id for p in found}, {running.id, ends_today.id})
+
+    def test_find_by_value(self):
+        """It should Find Promotions by value"""
+        promotion = PromotionFactory(promotion_type=PromotionType.AMOUNT_OFF, value=Decimal("12.34"))
+        promotion.create()
+        found = Promotion.find_by_value(Decimal("12.34")).all()
+        self.assertEqual([p.id for p in found], [promotion.id])
+        self.assertEqual(Promotion.find_by_value(Decimal("99.99")).count(), 0)
+
+    def test_find_by_start_and_end_date(self):
+        """It should Find Promotions by start_date and end_date"""
+        promotion = PromotionFactory(start_date=date(2026, 5, 1), end_date=date(2026, 5, 31))
+        promotion.create()
+        self.assertEqual(Promotion.find_by_start_date(date(2026, 5, 1)).count(), 1)
+        self.assertEqual(Promotion.find_by_end_date(date(2026, 5, 31)).count(), 1)
+        self.assertEqual(Promotion.find_by_start_date(date(2026, 6, 1)).count(), 0)
+        self.assertEqual(Promotion.find_by_end_date(date(2026, 6, 30)).count(), 0)
+
+    def test_find_by_attributes(self):
+        """It should Find Promotions matching all given attributes"""
+        promotion = PromotionFactory(product_id=4242, active=True)
+        promotion.create()
+        PromotionFactory(product_id=4242, active=False).create()
+        found = Promotion.find_by_attributes(product_id=4242, active=True).all()
+        self.assertEqual([p.id for p in found], [promotion.id])
+        self.assertEqual(Promotion.find_by_attributes().count(), 2)

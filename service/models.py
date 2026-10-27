@@ -197,6 +197,50 @@ class Promotion(db.Model):  # pylint: disable=too-many-instance-attributes
         return cls.query.filter(cls.active == active)
 
     @classmethod
+    def find_by_value(cls, value):
+        """Returns all Promotions with the given value
+
+        Args:
+            value (Decimal): the value of the Promotions you want to match
+        """
+        logger.info("Processing value query for %s ...", value)
+        return cls.query.filter(cls.value == value)
+
+    @classmethod
+    def find_by_start_date(cls, start_date):
+        """Returns all Promotions that start on the given date
+
+        Args:
+            start_date (date): the start date of the Promotions you want to match
+        """
+        logger.info("Processing start_date query for %s ...", start_date)
+        return cls.query.filter(cls.start_date == start_date)
+
+    @classmethod
+    def find_by_end_date(cls, end_date):
+        """Returns all Promotions that end on the given date
+
+        Args:
+            end_date (date): the end date of the Promotions you want to match
+        """
+        logger.info("Processing end_date query for %s ...", end_date)
+        return cls.query.filter(cls.end_date == end_date)
+
+    @classmethod
+    def find_by_attributes(cls, **filters):
+        """Returns all Promotions matching every given attribute (AND)
+
+        Args:
+            **filters: any of id, promotion_type, value, product_id,
+                start_date, end_date, active, already converted to column types
+        """
+        logger.info("Processing attribute query for %s ...", filters)
+        query = cls.query
+        for attribute, value in filters.items():
+            query = query.filter(getattr(cls, attribute) == value)
+        return query
+
+    @classmethod
     def find_active_on(cls, on_date):
         """Returns all active Promotions that are running on the given date
 

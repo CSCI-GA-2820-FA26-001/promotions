@@ -326,3 +326,77 @@ class TestPromotionService(TestCase):
             Promotion.find(promotion_id).name,
             original_name
         )
+
+    ######################################################################
+    #  Q U E R Y   T E S T   C A S E S
+    ######################################################################
+
+    def _create_for_query(self, **overrides):
+        """Create a Promotion from the valid payload with overrides"""
+        data = {**self._valid_create_payload(), **overrides}
+        promotion = Promotion().deserialize(data)
+        promotion.create()
+        return promotion
+
+    def test_query_promotions_by_id(self):
+        """It should return only the Promotion with the given id"""
+        target = self._create_for_query()
+        self._create_for_query(name="Other")
+        response = self.client.get(f"/promotions?id={target.id}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual([p["id"] for p in data], [target.id])
+
+    def test_query_promotions_no_match(self):
+        """It should return an empty list with 200 when nothing matches"""
+        self._create_for_query()
+        response = self.client.get("/promotions?id=100000")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.get_json(), [])
+
+    def test_query_promotions_by_each_attribute(self):
+        """It should filter by promotion_type, value, product_id, dates and active"""
+        match = self._create_for_query(
+            name="Match",
+            promotion_type="AMOUNT_OFF",
+            value=20.5,
+            product_id=777,
+            start_date="2026-03-01",
+            end_date="2026-03-31",
+            active=False,
+        )
+        self._create_for_query(name="Other")
+        for query in (
+            "promotion_type=AMOUNT_OFF",
+            "value=20.5",
+            "product_id=777",
+            "start_date=2026-03-01",
+            "end_date=2026-03-31",
+            "active=false",
+        ):
+            response = self.client.get(f"/promotions?{query}")
+            self.assertEqual(response.status_code, status.HTTP_200_OK, query)
+            self.assertEqual([p["id"] for p in response.get_json()], [match.id], query)
+
+    def test_query_promotions_multiple_filters(self):
+        """It should AND multiple filters together"""
+        match = self._create_for_query(name="Match", product_id=5, active=True)
+        self._create_for_query(name="Wrong product", product_id=6, active=True)
+        self._create_for_query(name="Inactive", product_id=5, active=False)
+        response = self.client.get("/promotions?product_id=5&active=true")
+        self.assertEqual([p["id"] for p in response.get_json()], [match.id])
+
+    def test_query_promotions_invalid_values(self):
+        """It should return 400 for unparseable filter values"""
+        for query in (
+            "id=abc",
+            "product_id=x",
+            "value=abc",
+            "value=NaN",
+            "start_date=not-a-date",
+            "end_date=2026-13-01",
+            "promotion_type=BOGUS",
+            "active=maybe",
+        ):
+            response = self.client.get(f"/promotions?{query}")
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, query)
