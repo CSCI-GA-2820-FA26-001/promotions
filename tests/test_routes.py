@@ -317,8 +317,11 @@ class TestPromotionService(TestCase):
         response = self.client.put(f"/promotions/{promotion.id}/activate")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(response.get_json()["active"])
-        self.assertTrue(Promotion.find(promotion.id).active)
+
+        updated_promotion = Promotion.find(promotion.id)
+
+        self.assertTrue(updated_promotion.active)
+        self.assertEqual(response.get_json(), updated_promotion.serialize())
 
     def test_deactivate_promotion(self):
         """It should deactivate a Promotion"""
@@ -329,8 +332,11 @@ class TestPromotionService(TestCase):
         response = self.client.put(f"/promotions/{promotion.id}/deactivate")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(response.get_json()["active"])
-        self.assertFalse(Promotion.find(promotion.id).active)
+
+        updated_promotion = Promotion.find(promotion.id)
+
+        self.assertFalse(updated_promotion.active)
+        self.assertEqual(response.get_json(), updated_promotion.serialize())
 
     def test_activate_promotion_not_found(self):
         """It should return 404 when activating a Promotion that does not exist"""
