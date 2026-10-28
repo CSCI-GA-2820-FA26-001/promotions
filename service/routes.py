@@ -40,16 +40,16 @@ from service.common import status  # HTTP Status Codes
 @app.route("/")
 def index():
     """Return information about the Promotions service"""
-    return jsonify({
-        "name": "Promotions Service",
-        "version": "1.0",
-        "url": "/promotions"
-    }), status.HTTP_200_OK
+    return (
+        jsonify({"name": "Promotions Service", "version": "1.0", "url": "/promotions"}),
+        status.HTTP_200_OK,
+    )
 
 
 ######################################################################
 #  R E S T   A P I   E N D P O I N T S
 ######################################################################
+
 
 @app.route("/promotions", methods=["POST"])
 def create_promotion():
@@ -120,6 +120,7 @@ def list_promotions():
 
 # UPDATE A PROMOTION
 
+
 @app.route("/promotions/<int:promotion_id>", methods=["PUT"])
 def update_promotion(promotion_id):
     """Update an existing Promotion"""
@@ -136,6 +137,47 @@ def update_promotion(promotion_id):
     except DataValidationError:
         db.session.rollback()
         raise
+
+    return jsonify(promotion.serialize()), status.HTTP_200_OK
+
+
+#  A C T I O N S
+
+
+@app.route("/promotions/<int:promotion_id>/activate", methods=["PUT"])
+def activate_promotion(promotion_id):
+    """Activate a Promotion"""
+    app.logger.info("Request to activate Promotion with id: %s", promotion_id)
+
+    promotion = Promotion.find(promotion_id)
+
+    if promotion is None:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            description=f"Promotion with id {promotion_id} was not found",
+        )
+
+    promotion.active = True
+    promotion.update()
+
+    return jsonify(promotion.serialize()), status.HTTP_200_OK
+
+
+@app.route("/promotions/<int:promotion_id>/deactivate", methods=["PUT"])
+def deactivate_promotion(promotion_id):
+    """Deactivate a Promotion"""
+    app.logger.info("Request to deactivate Promotion with id: %s", promotion_id)
+
+    promotion = Promotion.find(promotion_id)
+
+    if promotion is None:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            description=f"Promotion with id {promotion_id} was not found",
+        )
+
+    promotion.active = False
+    promotion.update()
 
     return jsonify(promotion.serialize()), status.HTTP_200_OK
 
@@ -171,7 +213,10 @@ def _to_date(name, text):
 
 def _to_promotion_type(name, text):
     if text not in PromotionType.__members__:
-        abort(status.HTTP_400_BAD_REQUEST, f"{name} must be one of {list(PromotionType.__members__)}")
+        abort(
+            status.HTTP_400_BAD_REQUEST,
+            f"{name} must be one of {list(PromotionType.__members__)}",
+        )
     return PromotionType[text]
 
 
@@ -194,4 +239,8 @@ FILTER_PARSERS = {
 
 def _parse_filters(args):
     """Convert supported query parameters to column types; unknown ones are ignored"""
-    return {name: parser(name, args[name]) for name, parser in FILTER_PARSERS.items() if name in args}
+    return {
+        name: parser(name, args[name])
+        for name, parser in FILTER_PARSERS.items()
+        if name in args
+    }

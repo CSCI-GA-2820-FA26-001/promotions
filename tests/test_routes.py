@@ -118,13 +118,9 @@ class TestPromotionService(TestCase):
 
     def test_create_promotion_requires_json(self):
         """It should reject requests without JSON content type"""
-        response = self.client.post(
-            "/promotions", data="{}", content_type="text/plain"
-        )
+        response = self.client.post("/promotions", data="{}", content_type="text/plain")
 
-        self.assertEqual(
-            response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
-        )
+        self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
         self.assertEqual(Promotion.query.count(), 0)
 
     def test_create_promotion_with_invalid_data(self):
@@ -277,9 +273,7 @@ class TestPromotionService(TestCase):
         update_data = promotion.serialize()
         update_data["name"] = "Updated Promotion"
 
-        response = self.client.put(
-            f"/promotions/{promotion_id}", json=update_data
-        )
+        response = self.client.put(f"/promotions/{promotion_id}", json=update_data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.get_json()["name"], "Updated Promotion")
@@ -289,15 +283,9 @@ class TestPromotionService(TestCase):
         """It should return 404 when a Promotion does not exist"""
         promotion = PromotionFactory()
 
-        response = self.client.put(
-            "/promotions/999999",
-            json=promotion.serialize()
-        )
+        response = self.client.put("/promotions/999999", json=promotion.serialize())
 
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_404_NOT_FOUND
-        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(response.is_json)
 
     def test_update_promotion_invalid_data(self):
@@ -312,20 +300,57 @@ class TestPromotionService(TestCase):
         update_data["promotion_type"] = "PERCENTAGE_OFF"
         update_data["value"] = 150
 
-        response = self.client.put(
-            f"/promotions/{promotion_id}",
-            json=update_data
-        )
+        response = self.client.put(f"/promotions/{promotion_id}", json=update_data)
 
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_400_BAD_REQUEST
-        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(response.is_json)
-        self.assertEqual(
-            Promotion.find(promotion_id).name,
-            original_name
-        )
+        self.assertEqual(Promotion.find(promotion_id).name, original_name)
+
+    #  A C T I O N   T E S T   C A S E S
+
+    def test_activate_promotion(self):
+        """It should activate a Promotion"""
+        promotion = PromotionFactory()
+        promotion.active = False
+        promotion.create()
+
+        response = self.client.put(f"/promotions/{promotion.id}/activate")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        updated_promotion = Promotion.find(promotion.id)
+
+        self.assertTrue(updated_promotion.active)
+        self.assertEqual(response.get_json(), updated_promotion.serialize())
+
+    def test_deactivate_promotion(self):
+        """It should deactivate a Promotion"""
+        promotion = PromotionFactory()
+        promotion.active = True
+        promotion.create()
+
+        response = self.client.put(f"/promotions/{promotion.id}/deactivate")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        updated_promotion = Promotion.find(promotion.id)
+
+        self.assertFalse(updated_promotion.active)
+        self.assertEqual(response.get_json(), updated_promotion.serialize())
+
+    def test_activate_promotion_not_found(self):
+        """It should return 404 when activating a Promotion that does not exist"""
+        response = self.client.put("/promotions/999999/activate")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(response.is_json)
+
+    def test_deactivate_promotion_not_found(self):
+        """It should return 404 when deactivating a Promotion that does not exist"""
+        response = self.client.put("/promotions/999999/deactivate")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(response.is_json)
 
     ######################################################################
     #  Q U E R Y   T E S T   C A S E S
