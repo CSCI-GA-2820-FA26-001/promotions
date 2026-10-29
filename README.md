@@ -1,5 +1,8 @@
 # Promotions Service
 
+[![CI Build](https://github.com/CSCI-GA-2820-FA26-001/promotions/actions/workflows/ci.yml/badge.svg)](https://github.com/CSCI-GA-2820-FA26-001/promotions/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/CSCI-GA-2820-FA26-001/promotions/graph/badge.svg)](https://codecov.io/gh/CSCI-GA-2820-FA26-001/promotions)
+
 A RESTful microservice for managing **promotions** (discounts and special offers) for an e-commerce store. It is built with Flask and SQLAlchemy and is developed using test-driven development as part of the NYU DevOps class project.
 
 ## Overview
