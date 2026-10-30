@@ -94,6 +94,14 @@ class TestPromotionService(TestCase):
         self.assertEqual(data["version"], "1.0")
         self.assertEqual(data["url"], "/promotions")
 
+    def test_health(self):
+        """It should report that the service is healthy"""
+        response = self.client.get("/health")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.is_json)
+        self.assertEqual(response.get_json(), {"status": "OK"})
+
     def test_create_promotion(self):
         """It should create a promotion"""
         payload = self._valid_create_payload()
