@@ -88,6 +88,36 @@ make lint              # run flake8 and pylint
 
 Run `make help` to see all available targets, including the Docker and Kubernetes (K3D) deployment targets.
 
+### Deploying to local Kubernetes
+
+The application image is built from the repository's root `Dockerfile` and pushed to the local K3D registry at `localhost:5001`. The Kubernetes nodes use the registry's internal address, `cluster-registry:5000`. Override `REGISTRY_PORT` if host port 5001 is already in use. A PostgreSQL database must be deployed first; see [Story #32](https://github.com/CSCI-GA-2820-FA26-001/promotions/issues/32) for its manifests and Secret setup.
+
+```bash
+make cluster
+
+# Create this Secret once, using the database name and Service from Story #32.
+DB_PASSWORD="$(python -c 'import secrets; print(secrets.token_hex(16))')"
+kubectl create secret generic promotions-postgres \
+  --from-literal=password="$DB_PASSWORD" \
+  --from-literal=database-uri="postgresql+psycopg://postgres:${DB_PASSWORD}@postgres:5432/promotions"
+unset DB_PASSWORD
+
+kubectl apply -f k8s/postgres/
+kubectl rollout status statefulset/postgres --timeout=180s
+
+make build
+make push
+make deploy
+```
+
+The Ingress is available at `http://promotions.local:8080`. When the hostname does not resolve locally, send the expected host header:
+
+```bash
+curl -H 'Host: promotions.local' http://127.0.0.1:8080/health
+```
+
+The health endpoint is supplied by [Story #23](https://github.com/CSCI-GA-2820-FA26-001/promotions/issues/23) and is used for the Kubernetes startup, readiness, and liveness probes.
+
 ## Contents
 
 ```text
