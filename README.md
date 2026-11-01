@@ -29,13 +29,14 @@ A promotion describes a discount that can apply to a single product or to the wh
 | Method   | URL                | Description                                                   |
 | -------- | ------------------ | ------------------------------------------------------------- |
 | `GET`    | `/`                | Service name, version and URL of the promotions collection    |
+| `GET`    | `/health`          | Liveness/readiness probe; returns `200` with `{"status": "OK"}` |
 | `POST`   | `/promotions`      | Create a promotion; returns `201` with a `Location` header    |
 | `GET`    | `/promotions`      | List all promotions (the whole collection)                    |
 | `GET`    | `/promotions/<id>` | Read a single promotion; `404` if it does not exist           |
 | `PUT`    | `/promotions/<id>` | Update a promotion; `404` if it does not exist                |
 | `DELETE` | `/promotions/<id>` | Delete a promotion; idempotent, always returns `204`          |
 
-There are three `GET` routes because they return different things: `/` describes the service, `/promotions` returns every promotion as a JSON list, and `/promotions/<id>` returns one promotion. All endpoints are implemented.
+There are four `GET` routes because they return different things: `/` describes the service, `/health` reports that the service is up (used by Kubernetes probes), `/promotions` returns every promotion as a JSON list, and `/promotions/<id>` returns one promotion. All endpoints are implemented.
 
 Request bodies for `POST` and `PUT` are JSON using the fields above. `id`, `created_at` and `updated_at` are managed by the service and ignored if sent. `product_id` and `active` are optional.
 
