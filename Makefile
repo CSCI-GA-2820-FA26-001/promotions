@@ -76,7 +76,9 @@ import: ## Import the image into the local K3D cluster
 deploy: ## Deploy the service on local Kubernetes
 	$(info Deploying service locally...)
 	kubectl apply -R -f k8s/
-	kubectl set image deployment/promotions promotions=$(IMAGE)
+	@current_image=$$(kubectl get deployment/promotions -o jsonpath='{.spec.template.spec.containers[?(@.name=="promotions")].image}'); \
+		kubectl set image deployment/promotions promotions=$(IMAGE); \
+		if [ "$$current_image" = "$(IMAGE)" ]; then kubectl rollout restart deployment/promotions; fi
 	kubectl rollout status deployment/promotions --timeout=180s
 
 ############################################################
