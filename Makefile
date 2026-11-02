@@ -1,8 +1,12 @@
-# These can be overidden with env vars.
+# These can be overridden with environment variables.
+# REGISTRY is the in-cluster address; PUSH_REGISTRY is the host-published address.
 REGISTRY ?= cluster-registry:5000
-IMAGE_NAME ?= petshop
+REGISTRY_PORT ?= 5001
+PUSH_REGISTRY ?= localhost:$(REGISTRY_PORT)
+IMAGE_NAME ?= promotions
 IMAGE_TAG ?= 1.0
 IMAGE ?= $(REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
+PUSH_IMAGE ?= $(PUSH_REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
 PLATFORM ?= "linux/amd64,linux/arm64"
 CLUSTER ?= nyu-devops
 
@@ -56,12 +60,12 @@ secret: ## Generate a secret hex key
 .PHONY: cluster
 cluster: ## Create a K3D Kubernetes cluster with load balancer and registry
 	$(info Creating Kubernetes cluster $(CLUSTER) with a registry and 1 worker nodes...)
-	k3d cluster create $(CLUSTER) --agents 1 --registry-create cluster-registry:5000 --registry-config ./config/registries.yaml --port '8080:80@loadbalancer'
+	k3d cluster create $(CLUSTER) --agents 1 --registry-create cluster-registry:0.0.0.0:$(REGISTRY_PORT) --registry-config ./config/registries.yaml --port '8080:80@loadbalancer'
 
 .PHONY: cluster-rm
 cluster-rm: ## Remove a K3D Kubernetes cluster
 	$(info Removing Kubernetes cluster...)
-	k3d cluster delete nyu-devops
+	k3d cluster delete $(CLUSTER)
 
 .PHONY: import
 import: ## Import the image into the local K3D cluster
@@ -72,6 +76,10 @@ import: ## Import the image into the local K3D cluster
 deploy: ## Deploy the service on local Kubernetes
 	$(info Deploying service locally...)
 	kubectl apply -R -f k8s/
+	@current_image=$$(kubectl get deployment/promotions -o jsonpath='{.spec.template.spec.containers[?(@.name=="promotions")].image}'); \
+		kubectl set image deployment/promotions promotions=$(IMAGE); \
+		if [ "$$current_image" = "$(IMAGE)" ]; then kubectl rollout restart deployment/promotions; fi
+	kubectl rollout status deployment/promotions --timeout=180s
 
 ############################################################
 # COMMANDS FOR BUILDING THE IMAGE
@@ -93,13 +101,14 @@ build:	## Build the project container image for local platform
 
 .PHONY: push
 push:	## Push the image to the container registry
-	$(info Pushing $(IMAGE)...)
-	docker push $(IMAGE)
+	$(info Pushing $(PUSH_IMAGE)...)
+	docker tag $(IMAGE) $(PUSH_IMAGE)
+	docker push $(PUSH_IMAGE)
 
 .PHONY: buildx
 buildx:	## Build multi-platform image with buildx
-	$(info Building multi-platform image $(IMAGE) for $(PLATFORM)...)
-	docker buildx build --file Dockerfile --pull --platform=$(PLATFORM) --tag $(IMAGE) --push .
+	$(info Building multi-platform image $(PUSH_IMAGE) for $(PLATFORM)...)
+	docker buildx build --file Dockerfile --pull --platform=$(PLATFORM) --tag $(PUSH_IMAGE) --push .
 
 .PHONY: remove
 remove:	## Stop and remove the buildx builder

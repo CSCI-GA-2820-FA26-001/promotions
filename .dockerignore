@@ -1,0 +1,15 @@
+.git
+.gitignore
+.devcontainer
+.pytest_cache
+.coverage
+.coverage.*
+htmlcov
+tests
+features
+__pycache__
+**/__pycache__
+*.py[cod]
+.env
+venv
+.venv
