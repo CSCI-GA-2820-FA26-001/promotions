@@ -23,7 +23,6 @@ and Delete Promotions
 
 from datetime import date
 from decimal import Decimal, InvalidOperation
-from flask import abort, jsonify, request, url_for
 from flask import current_app as app  # Import Flask application
 from service.models import (  # noqa: F401 pylint: disable=unused-import
     Promotion,
@@ -32,18 +31,32 @@ from service.models import (  # noqa: F401 pylint: disable=unused-import
     db,
 )
 from service.common import status  # HTTP Status Codes
+from flask import abort, jsonify, render_template, request, url_for
 
 
 ######################################################################
 # GET INDEX
 ######################################################################
+
 @app.route("/")
 def index():
-    """Return information about the Promotions service"""
+    """Return the Admin UI for browsers and JSON for API clients."""
+
+    if (
+        request.accept_mimetypes["text/html"]
+        > request.accept_mimetypes["application/json"]
+    ):
+        return render_template("index.html"), status.HTTP_200_OK
+
     return (
-        jsonify({"name": "Promotions Service", "version": "1.0", "url": "/promotions"}),
+        jsonify({
+            "name": "Promotions Service",
+            "version": "1.0",
+            "url": "/promotions",
+        }),
         status.HTTP_200_OK,
     )
+
 
 
 ######################################################################
