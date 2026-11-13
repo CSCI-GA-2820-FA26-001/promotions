@@ -82,17 +82,12 @@ class TestPromotionService(TestCase):
         }
 
     def test_index(self):
-        """It should return information about the Promotions service"""
+        """It should serve the Promotions admin UI"""
         response = self.client.get("/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(response.is_json)
-
-        data = response.get_json()
-
-        self.assertEqual(data["name"], "Promotions Service")
-        self.assertEqual(data["version"], "1.0")
-        self.assertEqual(data["url"], "/promotions")
+        self.assertIn("text/html", response.content_type)
+        self.assertIn(b"Promotions Admin", response.data)
 
     def test_health(self):
         """It should report that the service is healthy"""

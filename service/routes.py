@@ -39,11 +39,8 @@ from service.common import status  # HTTP Status Codes
 ######################################################################
 @app.route("/")
 def index():
-    """Return information about the Promotions service"""
-    return (
-        jsonify({"name": "Promotions Service", "version": "1.0", "url": "/promotions"}),
-        status.HTTP_200_OK,
-    )
+    """Serve the Promotions admin UI"""
+    return app.send_static_file("index.html")
 
 
 ######################################################################
