@@ -1,41 +1,36 @@
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Promotions Admin</title>
-    <script defer src="{{ url_for('static', filename='promotions.js') }}"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 20px;
-            color: #222;
-        }
-        h1 { margin-bottom: 8px; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-        th { background: #f4f4f4; }
-        #list-message { margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <h1>Promotions Admin</h1>
-    <p>View and manage promotions.</p>
 
-    <section id="create-section">
+    <title>Promotions Admin</title>
+
+    <!-- Shared UI styling from Query Promotions branch -->
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Existing List Promotions functionality -->
+    <script defer
+            src="{{ url_for('static', filename='promotions.js') }}"></script>
+</head>
+
+<body>
+    <main class="container">
+
+        <!-- Page Header -->
+        <header class="page-header">
+            <h1>Promotions Admin</h1>
+            <p>Manage and view promotions.</p>
+        </header>
+
+        <!-- Create Promotion Card -->
+<section id="create-section" class="card">
     <h2>Create Promotion</h2>
 
-    <form id="create-promotion-form" data-testid="create-form" novalidate>
+    <form class="search-form" id="create-promotion-form" data-testid="create-form" novalidate>
         <p>
             <label for="create-name">Name</label>
             <input id="create-name" name="name" type="text"
@@ -93,84 +88,100 @@
        aria-live="polite"></p>
 </section>
 
-<section id="edit-section" hidden>
-    <h2>Edit Promotion</h2>
+        <!-- Edit Promotion Card -->
+        <section id="edit-section" class="card" hidden>
+            <h2>Edit Promotion</h2>
 
-    <form id="edit-promotion-form" data-testid="edit-form" novalidate>
-        <input type="hidden" name="id">
+            <form class="search-form" id="edit-promotion-form" data-testid="edit-form" novalidate>
+                <input type="hidden" name="id">
 
-        <p>
-            <label for="edit-name">Name</label>
-            <input id="edit-name" name="name" type="text"
-                   maxlength="63" required>
-        </p>
+                <p>
+                    <label for="edit-name">Name</label>
+                    <input id="edit-name" name="name" type="text"
+                           maxlength="63" required>
+                </p>
 
-        <p>
-            <label for="edit-type">Promotion Type</label>
-            <select id="edit-type" name="promotion_type" required>
-                <option value="PERCENTAGE_OFF">Percentage Off</option>
-                <option value="AMOUNT_OFF">Amount Off</option>
-                <option value="BOGO">Buy One Get One</option>
-            </select>
-        </p>
+                <p>
+                    <label for="edit-type">Promotion Type</label>
+                    <select id="edit-type" name="promotion_type" required>
+                        <option value="PERCENTAGE_OFF">Percentage Off</option>
+                        <option value="AMOUNT_OFF">Amount Off</option>
+                        <option value="BOGO">Buy One Get One</option>
+                    </select>
+                </p>
 
-        <p>
-            <label for="edit-value">Value</label>
-            <input id="edit-value" name="value" type="number"
-                   min="0" step="0.01" required>
-        </p>
+                <p>
+                    <label for="edit-value">Value</label>
+                    <input id="edit-value" name="value" type="number"
+                           min="0" step="0.01" required>
+                </p>
 
-        <p>
-            <label for="edit-product">Product ID</label>
-            <input id="edit-product" name="product_id"
-                   type="number" min="1" step="1">
-        </p>
+                <p>
+                    <label for="edit-product">Product ID</label>
+                    <input id="edit-product" name="product_id"
+                           type="number" min="1" step="1">
+                </p>
 
-        <p>
-            <label for="edit-start">Start Date</label>
-            <input id="edit-start" name="start_date" type="date" required>
-        </p>
+                <p>
+                    <label for="edit-start">Start Date</label>
+                    <input id="edit-start" name="start_date" type="date" required>
+                </p>
 
-        <p>
-            <label for="edit-end">End Date</label>
-            <input id="edit-end" name="end_date" type="date" required>
-        </p>
+                <p>
+                    <label for="edit-end">End Date</label>
+                    <input id="edit-end" name="end_date" type="date" required>
+                </p>
 
-        <p>
-            <label for="edit-active">Active</label>
-            <input id="edit-active" name="active" type="checkbox">
-        </p>
+                <p>
+                    <label for="edit-active">Active</label>
+                    <input id="edit-active" name="active" type="checkbox">
+                </p>
 
-        <button type="submit" data-testid="save-button">Save</button>
-        <button type="button" data-testid="cancel-button">Cancel</button>
-    </form>
+                <div class="button-row">
+                    <button type="submit" data-testid="save-button">Save</button>
+                    <button type="button" data-testid="cancel-button">Cancel</button>
+                </div>
+            </form>
 
-    <p id="edit-message" data-testid="edit-message"
-       role="status" aria-live="polite"></p>
-</section>
+            <p id="edit-message" data-testid="edit-message"
+               role="status" aria-live="polite"></p>
+        </section>
 
+        <!-- Promotions List Card -->
+        <section class="card">
+            <h2>Promotions</h2>
 
-    <p id="list-message"
-       data-testid="list-message"
-       role="status">
-        Loading promotions...
-    </p>
+            <!-- List loading, empty, and error messages -->
+            <p id="list-message"
+               data-testid="list-message"
+               role="status"
+               aria-live="polite">
+                Loading promotions...
+            </p>
 
-    <table data-testid="promotions-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Value</th>
-                <th>Product ID</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Active</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="promotion-list"></tbody>
-    </table>
+            <!-- Promotions Table -->
+            <div class="table-wrapper">
+                <table data-testid="promotions-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Value</th>
+                            <th>Product ID</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Active</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="promotion-list"></tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
 </body>
+
 </html>
