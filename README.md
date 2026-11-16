@@ -3,7 +3,7 @@
 [![CI Build](https://github.com/CSCI-GA-2820-FA26-001/promotions/actions/workflows/ci.yml/badge.svg)](https://github.com/CSCI-GA-2820-FA26-001/promotions/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/CSCI-GA-2820-FA26-001/promotions/graph/badge.svg)](https://codecov.io/gh/CSCI-GA-2820-FA26-001/promotions)
 
-A RESTful microservice for managing **promotions** (discounts and special offers) for an e-commerce store. It is built with Flask and SQLAlchemy and is developed using test-driven development as part of the NYU DevOps class project.
+A RESTful microservice for managing **promotions** (discounts and special offers) for an e-commerce store. It is built with Flask, Flask-RESTX and SQLAlchemy and is developed using test-driven development as part of the NYU DevOps class project.
 
 ## Overview
 
@@ -26,36 +26,41 @@ A promotion describes a discount that can apply to a single product or to the wh
 
 ### API endpoints
 
-| Method   | URL                | Description                                                   |
-| -------- | ------------------ | ------------------------------------------------------------- |
-| `GET`    | `/`                | Service name, version and URL of the promotions collection    |
-| `GET`    | `/health`          | Liveness/readiness probe; returns `200` with `{"status": "OK"}` |
-| `POST`   | `/promotions`      | Create a promotion; returns `201` with a `Location` header    |
-| `GET`    | `/promotions`      | List all promotions (the whole collection)                    |
-| `GET`    | `/promotions/<id>` | Read a single promotion; `404` if it does not exist           |
-| `PUT`    | `/promotions/<id>` | Update a promotion; `404` if it does not exist                |
-| `DELETE` | `/promotions/<id>` | Delete a promotion; idempotent, always returns `204`          |
+| Method   | URL                                  | Description                                                   |
+| -------- | ------------------------------------ | ------------------------------------------------------------- |
+| `GET`    | `/`                                  | Service name, version and URL of the promotions collection    |
+| `GET`    | `/health`                            | Liveness/readiness probe; returns `200` with `{"status": "OK"}` |
+| `GET`    | `/apidocs/`                          | Swagger UI documenting the endpoints and data models          |
+| `POST`   | `/api/promotions`                    | Create a promotion; returns `201` with a `Location` header    |
+| `GET`    | `/api/promotions`                    | List promotions, optionally filtered (see below)              |
+| `GET`    | `/api/promotions/<id>`               | Read a single promotion; `404` if it does not exist           |
+| `PUT`    | `/api/promotions/<id>`               | Update a promotion; `404` if it does not exist                |
+| `DELETE` | `/api/promotions/<id>`               | Delete a promotion; idempotent, always returns `204`          |
+| `PUT`    | `/api/promotions/<id>/activate`      | Set `active` to `true`; `404` if it does not exist            |
+| `PUT`    | `/api/promotions/<id>/deactivate`    | Set `active` to `false`; `404` if it does not exist           |
 
-There are four `GET` routes because they return different things: `/` describes the service, `/health` reports that the service is up (used by Kubernetes probes), `/promotions` returns every promotion as a JSON list, and `/promotions/<id>` returns one promotion. All endpoints are implemented.
+The REST API is built with [Flask-RESTX](https://flask-restx.readthedocs.io/) and lives under `/api`; the interactive Swagger documentation is at `/apidocs/` (the raw spec is at `/api/swagger.json`). `/` and `/health` are plain routes outside `/api`: `/` describes the service and `/health` reports that the service is up (used by Kubernetes probes).
+
+`GET /api/promotions` accepts the query parameters `id`, `promotion_type`, `value`, `product_id`, `start_date`, `end_date` and `active`. Multiple parameters are combined with AND, unknown parameters are ignored, and an unparseable value returns `400`.
 
 Request bodies for `POST` and `PUT` are JSON using the fields above. `id`, `created_at` and `updated_at` are managed by the service and ignored if sent. `product_id` and `active` are optional.
 
 Example:
 
 ```bash
-curl -X POST http://localhost:8080/promotions \
+curl -X POST http://localhost:8080/api/promotions \
   -H "Content-Type: application/json" \
   -d '{"name": "Summer Sale", "promotion_type": "PERCENTAGE_OFF", "value": 20, "start_date": "2026-06-01", "end_date": "2026-08-31"}'
 ```
 
 ### Errors
 
-Errors are returned as JSON with `status`, `error` and `message` fields.
+Every error, including unknown URLs, is returned as JSON with `status`, `error` and `message` fields.
 
 | Status | When                                                                               |
 | ------ | ---------------------------------------------------------------------------------- |
 | `400`  | Invalid or missing data (bad type, `value` rules violated, `end_date` before `start_date`, malformed body) |
-| `404`  | Promotion id not found (read and update)                                           |
+| `404`  | Promotion id not found (read, update, activate and deactivate)                     |
 | `405`  | HTTP method not allowed for the URL                                                |
 | `415`  | `Content-Type` is not `application/json`                                           |
 | `500`  | Unexpected server error                                                            |
