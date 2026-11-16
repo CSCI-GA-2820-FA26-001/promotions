@@ -6,7 +6,7 @@ async function loadPromotions() {
     tbody.replaceChildren();
 
     try {
-                const response = await fetch("/api/promotions", {
+        const response = await fetch("/api/promotions", {
             headers: { Accept: "application/json" }
         });
 
@@ -90,26 +90,9 @@ async function createPromotion(event) {
 
     submitButton.disabled = true;
 
+   
     try {
-        const infoResponse = await fetch("/", {
-            headers: { Accept: "application/json" }
-        });
-
-        if (!infoResponse.ok) {
-            throw new Error("Could not find Promotions API.");
-        }
-
-        const serviceInfo = await infoResponse.json();
-
-        if (
-            typeof serviceInfo.url !== "string" ||
-            !serviceInfo.url.startsWith("/") ||
-            serviceInfo.url.startsWith("//")
-        ) {
-            throw new Error("Invalid Promotions API URL.");
-        }
-
-        const response = await fetch(serviceInfo.url, {
+        const response = await fetch("/api/promotions", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
