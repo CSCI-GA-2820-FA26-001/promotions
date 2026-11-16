@@ -95,6 +95,19 @@ class TestPromotionService(TestCase):
         self.assertEqual(data["version"], "1.0")
         self.assertEqual(data["url"], "/api/promotions")
 
+    def test_index_html(self):
+        """It should serve the Admin UI to browsers."""
+        response = self.client.get(
+            "/",
+            headers={"Accept": "text/html"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.mimetype, "text/html")
+        self.assertIn(b"Promotions Admin", response.data)
+        self.assertIn(b'id="promotion-list"', response.data)
+    
+
     def test_health(self):
         """It should report that the service is healthy"""
         response = self.client.get("/health")
