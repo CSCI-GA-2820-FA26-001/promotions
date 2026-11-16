@@ -93,6 +93,62 @@
        aria-live="polite"></p>
 </section>
 
+<section id="edit-section" hidden>
+    <h2>Edit Promotion</h2>
+
+    <form id="edit-promotion-form" data-testid="edit-form" novalidate>
+        <input type="hidden" name="id">
+
+        <p>
+            <label for="edit-name">Name</label>
+            <input id="edit-name" name="name" type="text"
+                   maxlength="63" required>
+        </p>
+
+        <p>
+            <label for="edit-type">Promotion Type</label>
+            <select id="edit-type" name="promotion_type" required>
+                <option value="PERCENTAGE_OFF">Percentage Off</option>
+                <option value="AMOUNT_OFF">Amount Off</option>
+                <option value="BOGO">Buy One Get One</option>
+            </select>
+        </p>
+
+        <p>
+            <label for="edit-value">Value</label>
+            <input id="edit-value" name="value" type="number"
+                   min="0" step="0.01" required>
+        </p>
+
+        <p>
+            <label for="edit-product">Product ID</label>
+            <input id="edit-product" name="product_id"
+                   type="number" min="1" step="1">
+        </p>
+
+        <p>
+            <label for="edit-start">Start Date</label>
+            <input id="edit-start" name="start_date" type="date" required>
+        </p>
+
+        <p>
+            <label for="edit-end">End Date</label>
+            <input id="edit-end" name="end_date" type="date" required>
+        </p>
+
+        <p>
+            <label for="edit-active">Active</label>
+            <input id="edit-active" name="active" type="checkbox">
+        </p>
+
+        <button type="submit" data-testid="save-button">Save</button>
+        <button type="button" data-testid="cancel-button">Cancel</button>
+    </form>
+
+    <p id="edit-message" data-testid="edit-message"
+       role="status" aria-live="polite"></p>
+</section>
+
 
     <p id="list-message"
        data-testid="list-message"
@@ -111,6 +167,7 @@
                 <th>Start Date</th>
                 <th>End Date</th>
                 <th>Active</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody id="promotion-list"></tbody>
