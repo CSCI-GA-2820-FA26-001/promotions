@@ -72,3 +72,95 @@ async function loadPromotions() {
 }
 
 document.addEventListener("DOMContentLoaded", loadPromotions);
+async function createPromotion(event) {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const message = document.getElementById("create-message");
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    message.textContent = "";
+    message.dataset.state = "";
+
+    const invalidField = form.querySelector(":invalid");
+
+    if (invalidField) {
+        message.textContent =
+            `Please enter a valid ${invalidField.name.replaceAll("_", " ")}.`;
+        message.dataset.state = "error";
+        invalidField.focus();
+        return;
+    }
+
+    const values = new FormData(form);
+
+    const promotion = {
+        name: values.get("name").trim(),
+        promotion_type: values.get("promotion_type"),
+        value: Number(values.get("value")),
+        product_id: Number(values.get("product_id")),
+        start_date: values.get("start_date"),
+        end_date: values.get("end_date"),
+        active: form.elements.namedItem("active").checked
+    };
+
+    submitButton.disabled = true;
+
+    try {
+        const infoResponse = await fetch("/", {
+            headers: { Accept: "application/json" }
+        });
+
+        if (!infoResponse.ok) {
+            throw new Error("Could not find Promotions API.");
+        }
+
+        const serviceInfo = await infoResponse.json();
+
+        if (
+            typeof serviceInfo.url !== "string" ||
+            !serviceInfo.url.startsWith("/") ||
+            serviceInfo.url.startsWith("//")
+        ) {
+            throw new Error("Invalid Promotions API URL.");
+        }
+
+        const response = await fetch(serviceInfo.url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json"
+            },
+            body: JSON.stringify(promotion)
+        });
+
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(
+                result.message || "Could not create promotion."
+            );
+        }
+
+        form.reset();
+
+        await loadPromotions();
+
+        message.textContent = "Promotion created successfully!";
+        message.dataset.state = "success";
+
+    } catch (error) {
+        message.textContent = error.message;
+        message.dataset.state = "error";
+    } finally {
+        submitButton.disabled = false;
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("create-promotion-form");
+
+    if (form) {
+        form.addEventListener("submit", createPromotion);
+    }
+});
