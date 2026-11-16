@@ -6,23 +6,7 @@ async function loadPromotions() {
     tbody.replaceChildren();
 
     try {
-        // Discover the current Promotions API URL
-        const infoResponse = await fetch("/", {
-            headers: { Accept: "application/json" }
-        });
-
-        if (!infoResponse.ok) {
-            throw new Error("Could not load service information");
-        }
-
-        const serviceInfo = await infoResponse.json();
-        const apiUrl = serviceInfo.url;
-
-        if (typeof apiUrl !== "string" || !apiUrl.startsWith("/")) {
-            throw new Error("Invalid API URL");
-        }
-
-        const response = await fetch(apiUrl, {
+                const response = await fetch("/api/promotions", {
             headers: { Accept: "application/json" }
         });
 
