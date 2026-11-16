@@ -107,7 +107,6 @@ class TestPromotionService(TestCase):
         self.assertIn(b"Promotions Admin", response.data)
         self.assertIn(b'id="promotion-list"', response.data)
     
-
     def test_health(self):
         """It should report that the service is healthy"""
         response = self.client.get("/health")
