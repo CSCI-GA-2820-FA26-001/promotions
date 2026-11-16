@@ -206,26 +206,7 @@ async function savePromotionEdit(event) {
     button.disabled = true;
 
     try {
-        const infoResponse = await fetch("/", {
-            headers: { Accept: "application/json" }
-        });
-
-        if (!infoResponse.ok) {
-            throw new Error("Could not find Promotions API.");
-        }
-
-        const info = await infoResponse.json();
-        const apiUrl = info.url;
-
-        if (
-            typeof apiUrl !== "string" ||
-            !apiUrl.startsWith("/") ||
-            apiUrl.startsWith("//")
-        ) {
-            throw new Error("Invalid Promotions API URL.");
-        }
-
-        const response = await fetch(`${apiUrl}/${id}`, {
+        const response = await fetch(`/api/promotions/${id}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
