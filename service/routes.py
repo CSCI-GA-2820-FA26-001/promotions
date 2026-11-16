@@ -41,22 +41,8 @@ from service.common import status  # HTTP Status Codes
 ######################################################################
 @app.route("/")
 def index():
-    """Return the Admin UI to browsers and JSON to API clients."""
-
-    if (
-        request.accept_mimetypes["text/html"]
-        > request.accept_mimetypes["application/json"]
-    ):
-        return render_template("index.html"), status.HTTP_200_OK
-
-    return (
-        jsonify({
-            "name": "Promotions Service",
-            "version": "1.0",
-            "url": api.url_for(PromotionCollection),
-        }),
-        status.HTTP_200_OK,
-    )
+    """Serve the Promotions Admin UI."""
+    return render_template("index.html"), status.HTTP_200_OK
 
 
 ######################################################################

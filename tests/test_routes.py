@@ -83,17 +83,15 @@ class TestPromotionService(TestCase):
         }
 
     def test_index(self):
-        """It should return information about the Promotions service"""
-        response = self.client.get("/")
+        """It should always serve the Admin UI at the root URL."""
+        response = self.client.get(
+            "/",
+            headers={"Accept": "application/json"},
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(response.is_json)
-
-        data = response.get_json()
-
-        self.assertEqual(data["name"], "Promotions Service")
-        self.assertEqual(data["version"], "1.0")
-        self.assertEqual(data["url"], "/api/promotions")
+        self.assertEqual(response.mimetype, "text/html")
+        self.assertIn(b"Promotions Admin", response.data)
 
     def test_index_html(self):
         """It should serve the Admin UI to browsers."""
