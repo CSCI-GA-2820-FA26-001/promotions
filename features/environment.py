@@ -47,3 +47,14 @@ def get_firefox():
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--headless")
     return webdriver.Firefox(options=options)
+
+def after_scenario(context, scenario):
+    """Remove browser mock after each scenario."""
+
+    script_id = getattr(context, "list_fixture_script_id", None)
+
+    if script_id:
+        context.driver.execute_cdp_cmd(
+            "Page.removeScriptToEvaluateOnNewDocument",
+            {"identifier": script_id},
+        )
