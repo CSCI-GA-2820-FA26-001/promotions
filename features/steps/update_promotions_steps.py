@@ -48,10 +48,10 @@ def create_test_promotion(context):
     driver.get(context.base_url)
 
     WebDriverWait(driver, 10).until(
-        lambda d: d.find_element(
-            By.ID, "list-message"
-        ).text != "Loading promotions..."
-    )
+    lambda d: d.find_element(
+        By.ID, "create-promotion-form"
+    ).is_displayed()
+)
 
     form = driver.find_element(By.ID, "create-promotion-form")
 
