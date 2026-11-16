@@ -1,41 +1,36 @@
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Promotions Admin</title>
-    <script defer src="{{ url_for('static', filename='promotions.js') }}"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 20px;
-            color: #222;
-        }
-        h1 { margin-bottom: 8px; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-        th { background: #f4f4f4; }
-        #list-message { margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <h1>Promotions Admin</h1>
-    <p>View and manage promotions.</p>
 
-    <section id="create-section">
+    <title>Promotions Admin</title>
+
+    <!-- Shared UI styling from Query Promotions branch -->
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Existing List Promotions functionality -->
+    <script defer
+            src="{{ url_for('static', filename='promotions.js') }}"></script>
+</head>
+
+<body>
+    <main class="container">
+
+        <!-- Page Header -->
+        <header class="page-header">
+            <h1>Promotions Admin</h1>
+            <p>Manage and view promotions.</p>
+        </header>
+
+        <!-- Create Promotion Card -->
+<section id="create-section" class="card">
     <h2>Create Promotion</h2>
 
-    <form id="create-promotion-form" data-testid="create-form" novalidate>
+    <form class="search-form" id="create-promotion-form" data-testid="create-form" novalidate>
         <p>
             <label for="create-name">Name</label>
             <input id="create-name" name="name" type="text"
@@ -93,27 +88,40 @@
        aria-live="polite"></p>
 </section>
 
+        <!-- Promotions List Card -->
+        <section class="card">
+            <h2>Promotions</h2>
 
-    <p id="list-message"
-       data-testid="list-message"
-       role="status">
-        Loading promotions...
-    </p>
+            <!-- List loading, empty, and error messages -->
+            <p id="list-message"
+               data-testid="list-message"
+               role="status"
+               aria-live="polite">
+                Loading promotions...
+            </p>
 
-    <table data-testid="promotions-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Value</th>
-                <th>Product ID</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Active</th>
-            </tr>
-        </thead>
-        <tbody id="promotion-list"></tbody>
-    </table>
+            <!-- Promotions Table -->
+            <div class="table-wrapper">
+                <table data-testid="promotions-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Value</th>
+                            <th>Product ID</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Active</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="promotion-list"></tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
 </body>
+
 </html>
