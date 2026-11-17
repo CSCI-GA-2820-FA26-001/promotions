@@ -43,6 +43,26 @@ async function loadPromotions() {
                 row.appendChild(cell);
             });
 
+            const actionCell = document.createElement("td");
+            const deleteButton = document.createElement("button");
+
+            deleteButton.type = "button";
+            deleteButton.textContent = "Delete";
+            deleteButton.className = "delete-button";
+            deleteButton.setAttribute(
+                "data-testid",
+                "delete-promotion"
+            );
+            deleteButton.dataset.promotionId = promotion.id;
+
+            deleteButton.addEventListener(
+                "click",
+                deletePromotion
+            );
+
+            actionCell.appendChild(deleteButton);
+            row.appendChild(actionCell);
+
             tbody.appendChild(row);
         });
 
@@ -54,6 +74,54 @@ async function loadPromotions() {
         message.setAttribute("data-testid", "list-error");
     }
 }
+
+async function deletePromotion(event) {
+    const button = event.currentTarget;
+    const promotionId = button.dataset.promotionId;
+    const message = document.getElementById("delete-message");
+
+    message.textContent = "";
+    message.dataset.state = "";
+
+    const confirmed = window.confirm(
+        "Are you sure you want to delete this Promotion?"
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    button.disabled = true;
+
+    try {
+        const response = await fetch(
+            `/api/promotions/${promotionId}`,
+            {
+                method: "DELETE",
+                headers: {
+                    Accept: "application/json"
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Unable to delete Promotion.");
+        }
+
+        await loadPromotions();
+
+        message.textContent =
+            "Promotion deleted successfully!";
+        message.dataset.state = "success";
+
+    } catch (error) {
+        message.textContent =
+            "Unable to delete Promotion.";
+        message.dataset.state = "error";
+        button.disabled = false;
+    }
+}
+
 
 document.addEventListener("DOMContentLoaded", loadPromotions);
 async function createPromotion(event) {
