@@ -94,6 +94,8 @@ class TestPromotionService(TestCase):
         self.assertIn(b"Promotions Admin", response.data)
         self.assertIn(b"action-message", response.data)
         self.assertIn(b"<th>Actions</th>", response.data)
+        self.assertIn(b"create-promotion-form", response.data)
+        self.assertIn(b"promotion-details", response.data)
 
     def test_index_html(self):
         """It should serve the Admin UI to browsers."""

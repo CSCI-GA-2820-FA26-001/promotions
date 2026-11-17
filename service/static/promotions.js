@@ -1,4 +1,17 @@
 const PROMOTIONS_API = "/api/promotions";
+const detailsPanel = document.getElementById("promotion-details");
+const lookupStatus = document.getElementById("lookup-status");
+
+const detailFields = {
+    id: "promotion-id",
+    name: "promotion-name",
+    promotion_type: "promotion-type",
+    value: "promotion-value",
+    start_date: "promotion-start-date",
+    end_date: "promotion-end-date",
+    created_at: "promotion-created-at",
+    updated_at: "promotion-updated-at",
+};
 
 
 function renderPromotions(promotions) {
@@ -35,6 +48,7 @@ function renderPromotions(promotions) {
 
         const actionCell = document.createElement("td");
         const actionButton = document.createElement("button");
+        const viewButton = document.createElement("button");
         const deleteButton = document.createElement("button");
 
         actionButton.type = "button";
@@ -56,6 +70,12 @@ function renderPromotions(promotions) {
         );
 
         actionCell.appendChild(actionButton);
+
+        viewButton.type = "button";
+        viewButton.className = "view-details-btn";
+        viewButton.dataset.promotionId = promotion.id;
+        viewButton.textContent = "View details";
+        actionCell.appendChild(viewButton);
 
         deleteButton.type = "button";
         deleteButton.textContent = "Delete";
@@ -377,6 +397,71 @@ async function clearSearch() {
 }
 
 
+function setDetailText(elementId, value) {
+    document.getElementById(elementId).textContent = value ?? "—";
+}
+
+
+function clearDetails() {
+    Object.values(detailFields).forEach((elementId) => {
+        setDetailText(elementId, "");
+    });
+    setDetailText("promotion-product-id", "");
+    setDetailText("promotion-active", "");
+}
+
+
+function displayPromotion(promotion) {
+    Object.entries(detailFields).forEach(([field, elementId]) => {
+        setDetailText(elementId, promotion[field]);
+    });
+    setDetailText(
+        "promotion-product-id",
+        promotion.product_id === null ? "Store-wide" : promotion.product_id,
+    );
+    setDetailText("promotion-active", promotion.active ? "Active" : "Inactive");
+}
+
+
+async function loadPromotion(promotionId) {
+    detailsPanel.hidden = false;
+    clearDetails();
+
+    if (!/^[1-9]\d*$/.test(String(promotionId))) {
+        lookupStatus.textContent = "Enter a valid Promotion ID.";
+        return;
+    }
+
+    lookupStatus.textContent = "Loading Promotion details…";
+
+    try {
+        const response = await fetch(
+            `${PROMOTIONS_API}/${encodeURIComponent(promotionId)}`,
+            {
+                headers: { Accept: "application/json" },
+            },
+        );
+
+        if (response.status === 404) {
+            lookupStatus.textContent =
+                `Promotion ${promotionId} was not found.`;
+            return;
+        }
+        if (!response.ok) {
+            lookupStatus.textContent =
+                `Unable to load Promotion details (HTTP ${response.status}).`;
+            return;
+        }
+
+        displayPromotion(await response.json());
+        lookupStatus.textContent = `Promotion ${promotionId} loaded.`;
+    } catch (error) {
+        lookupStatus.textContent =
+            "Unable to connect to the Promotions service.";
+    }
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
     const promotionList = document.getElementById("promotion-list");
     const form =
@@ -408,6 +493,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     promotionList.addEventListener("click", (event) => {
+        const viewButton = event.target.closest(".view-details-btn");
+        if (viewButton) {
+            const promotionId = viewButton.dataset.promotionId;
+            const url = new URL(window.location.href);
+            url.searchParams.set("id", promotionId);
+            window.history.replaceState({}, "", url);
+            loadPromotion(promotionId);
+        }
+
         const button = event.target.closest(
             '[data-testid="promotion-action"]',
         );
@@ -417,4 +511,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     loadPromotions();
+
+    const initialPromotionId =
+        new URLSearchParams(window.location.search).get("id");
+    if (initialPromotionId) {
+        loadPromotion(initialPromotionId);
+    }
 });
