@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Promotions Admin</title>
+
+    <!-- Shared UI styling from Query Promotions branch -->
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Existing List Promotions functionality -->
+    <script defer
+            src="{{ url_for('static', filename='promotions.js') }}"></script>
+</head>
+
+<body>
+    <main class="container">
+
+        <!-- Page Header -->
+        <header class="page-header">
+            <h1>Promotions Admin</h1>
+            <p>Manage and view promotions.</p>
+        </header>
+
+        <!-- Create Promotion Card -->
+<section id="create-section" class="card">
+    <h2>Create Promotion</h2>
+
+    <form class="search-form" id="create-promotion-form" data-testid="create-form" novalidate>
+        <p>
+            <label for="create-name">Name</label>
+            <input id="create-name" name="name" type="text"
+                   maxlength="63" required>
+        </p>
+
+        <p>
+            <label for="create-type">Promotion Type</label>
+            <select id="create-type" name="promotion_type" required>
+                <option value="">Select type</option>
+                <option value="PERCENTAGE_OFF">Percentage Off</option>
+                <option value="AMOUNT_OFF">Amount Off</option>
+                <option value="BOGO">Buy One Get One</option>
+            </select>
+        </p>
+
+        <p>
+            <label for="create-value">Value</label>
+            <input id="create-value" name="value" type="number"
+                   min="0" step="0.01" required>
+        </p>
+
+        <p>
+            <label for="create-product">Product ID</label>
+            <input id="create-product" name="product_id"
+                   type="number" min="1" step="1" required>
+        </p>
+
+        <p>
+            <label for="create-start">Start Date</label>
+            <input id="create-start" name="start_date"
+                   type="date" required>
+        </p>
+
+        <p>
+            <label for="create-end">End Date</label>
+            <input id="create-end" name="end_date"
+                   type="date" required>
+        </p>
+
+        <p>
+            <label for="create-active">Active</label>
+            <input id="create-active" name="active"
+                   type="checkbox" checked>
+        </p>
+
+        <button type="submit" data-testid="create-button">
+            Create Promotion
+        </button>
+    </form>
+
+    <p id="create-message"
+       data-testid="create-message"
+       role="status"
+       aria-live="polite"></p>
+</section>
+
+        <!-- Promotions List Card -->
+        <section class="card">
+            <h2>Promotions</h2>
+
+            <!-- List loading, empty, and error messages -->
+            <p id="list-message"
+               data-testid="list-message"
+               role="status"
+               aria-live="polite">
+                Loading promotions...
+            </p>
+
+            <!-- Promotions Table -->
+            <div class="table-wrapper">
+                <table data-testid="promotions-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Value</th>
+                            <th>Product ID</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Active</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="promotion-list"></tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+</body>
+
+</html>
