@@ -48,6 +48,7 @@ def get_firefox():
     options.add_argument("--headless")
     return webdriver.Firefox(options=options)
 
+
 def after_scenario(context, scenario):
     """Remove browser mock after each scenario."""
 

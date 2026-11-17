@@ -92,6 +92,8 @@ class TestPromotionService(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.mimetype, "text/html")
         self.assertIn(b"Promotions Admin", response.data)
+        self.assertIn(b"action-message", response.data)
+        self.assertIn(b"<th>Action</th>", response.data)
 
     def test_index_html(self):
         """It should serve the Admin UI to browsers."""

@@ -28,7 +28,7 @@ A promotion describes a discount that can apply to a single product or to the wh
 
 | Method   | URL                                  | Description                                                   |
 | -------- | ------------------------------------ | ------------------------------------------------------------- |
-| `GET`    | `/`                                  | Service name, version and URL of the promotions collection    |
+| `GET`    | `/`                                  | Promotions Admin UI for creating, listing and managing promotions |
 | `GET`    | `/health`                            | Liveness/readiness probe; returns `200` with `{"status": "OK"}` |
 | `GET`    | `/apidocs/`                          | Swagger UI documenting the endpoints and data models          |
 | `POST`   | `/api/promotions`                    | Create a promotion; returns `201` with a `Location` header    |
@@ -39,9 +39,19 @@ A promotion describes a discount that can apply to a single product or to the wh
 | `PUT`    | `/api/promotions/<id>/activate`      | Set `active` to `true`; `404` if it does not exist            |
 | `PUT`    | `/api/promotions/<id>/deactivate`    | Set `active` to `false`; `404` if it does not exist           |
 
-The REST API is built with [Flask-RESTX](https://flask-restx.readthedocs.io/) and lives under `/api`; the interactive Swagger documentation is at `/apidocs/` (the raw spec is at `/api/swagger.json`). `/` and `/health` are plain routes outside `/api`: `/` describes the service and `/health` reports that the service is up (used by Kubernetes probes).
+The REST API is built with [Flask-RESTX](https://flask-restx.readthedocs.io/) and lives under `/api`; the interactive Swagger documentation is at `/apidocs/` (the raw spec is at `/api/swagger.json`). The root URL `/` serves the Promotions Admin UI, where you can create and list promotions and activate or deactivate them. `/health` reports service health for Kubernetes probes.
 
 `GET /api/promotions` accepts the query parameters `id`, `promotion_type`, `value`, `product_id`, `start_date`, `end_date` and `active`. Multiple parameters are combined with AND, unknown parameters are ignored, and an unparseable value returns `400`.
+
+### Managing promotion status in the Admin UI
+
+Use **Activate** or **Deactivate** in a promotion's Action column. The UI shows a success or error message and updates the displayed active status only after the service confirms the action.
+
+The Action UI BDD scenarios create their test promotions through the Create form and clean them up through the browser-based Swagger UI. The failure scenario simulates an unsuccessful action response in the browser. Run the scenarios with:
+
+```bash
+BASE_URL=http://localhost:8080 behave features/action_promotions.feature
+```
 
 Request bodies for `POST` and `PUT` are JSON using the fields above. `id`, `created_at` and `updated_at` are managed by the service and ignored if sent. `product_id` and `active` are optional.
 
