@@ -1,4 +1,4 @@
-const PROMOTIONS_API = "/promotions";
+const PROMOTIONS_API = "/api/promotions";
 
 const attributeSelect = document.getElementById("query-attribute");
 const valueInput = document.getElementById("query-value");
