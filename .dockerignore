@@ -1,6 +1,5 @@
 .git
 .gitignore
-.devcontainer
 .pytest_cache
 .coverage
 .coverage.*
