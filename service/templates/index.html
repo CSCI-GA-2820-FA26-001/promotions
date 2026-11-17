@@ -88,6 +88,44 @@
        aria-live="polite"></p>
 </section>
 
+        <!-- Query Promotions Card -->
+        <section id="query-section" class="card">
+            <h2>Search Promotions</h2>
+
+            <div class="search-form">
+                <label for="query-attribute">Attribute</label>
+                <select id="query-attribute">
+                    <option value="id">ID</option>
+                    <option value="promotion_type">Promotion Type</option>
+                    <option value="value">Value</option>
+                    <option value="product_id">Product ID</option>
+                    <option value="start_date">Start Date</option>
+                    <option value="end_date">End Date</option>
+                    <option value="active">Active</option>
+                </select>
+
+                <label for="query-value">Search Value</label>
+                <input id="query-value"
+                       type="text"
+                       placeholder="Enter search value">
+
+                <div class="button-row">
+                    <button id="search-btn" type="button">Search</button>
+                    <button id="clear-btn" type="button">Clear</button>
+                </div>
+            </div>
+
+            <p id="flash-message"
+               role="status"
+               aria-live="polite"></p>
+        </section>
+
+        <!-- Delete status -->
+        <p id="delete-message"
+           data-testid="delete-message"
+           role="status"
+           aria-live="polite"></p>
+
         <!-- Promotions List Card -->
         <section class="card">
             <h2>Promotions</h2>
@@ -113,7 +151,7 @@
                             <th>Start Date</th>
                             <th>End Date</th>
                             <th>Active</th>
-                            <th>Details</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
 
