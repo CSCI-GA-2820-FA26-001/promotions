@@ -125,6 +125,87 @@ th {
     color: #b91c1c;
 }
 
+/* Delete Promotion */
+.delete-button {
+    background: #b91c1c;
+    color: white;
+}
+
+#delete-message[data-state="success"] {
+    color: #047857;
+}
+
+#delete-message[data-state="error"] {
+    color: #b91c1c;
+}
+
+#action-message {
+    min-height: 20px;
+    margin: 0 0 12px;
+}
+
+#action-message[data-state="success"] {
+    color: #047857;
+}
+
+#action-message[data-state="error"] {
+    color: #b91c1c;
+}
+
+.promotion-action-btn[data-action="activate"] {
+    background: #047857;
+    color: white;
+    white-space: nowrap;
+}
+
+.promotion-action-btn[data-action="deactivate"] {
+    background: #b91c1c;
+    color: white;
+    white-space: nowrap;
+}
+
+.promotion-action-btn:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+/* Read Promotion details */
+section[hidden] {
+    display: none;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 16px;
+}
+
+.details-grid div {
+    min-width: 0;
+}
+
+.details-grid dt {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-bottom: 4px;
+}
+
+.details-grid dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.view-details-btn {
+    background: #2563eb;
+    color: white;
+    white-space: nowrap;
+}
+
+button:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
+}
+
 /* Edit Promotion form */
 #edit-section[hidden] {
     display: none;

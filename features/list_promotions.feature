@@ -20,4 +20,3 @@ Feature: List Promotions through the Admin UI
     Given the Promotions API is unavailable
     When I open the Promotions admin page
     Then I should see an error message for the list
-
