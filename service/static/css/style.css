@@ -205,3 +205,51 @@ button:focus-visible {
     outline: 3px solid #93c5fd;
     outline-offset: 2px;
 }
+
+/* Edit Promotion form */
+#edit-section[hidden] {
+    display: none;
+}
+
+#edit-section .search-form p {
+    margin: 0;
+}
+
+#edit-section label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+#edit-section input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+#edit-section .button-row {
+    justify-content: flex-start;
+}
+
+#edit-section [data-testid="save-button"] {
+    background: #2563eb;
+    color: white;
+}
+
+#edit-section [data-testid="cancel-button"] {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+[data-testid="edit-button"] {
+    background: #2563eb;
+    color: white;
+    padding: 8px 14px;
+}
+
+#edit-message[data-state="success"] {
+    color: #047857;
+}
+
+#edit-message[data-state="error"] {
+    color: #b91c1c;
+}

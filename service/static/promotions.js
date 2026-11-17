@@ -92,6 +92,16 @@ function renderPromotions(promotions) {
         );
 
         actionCell.appendChild(deleteButton);
+
+        const editButton = document.createElement("button");
+        editButton.type = "button";
+        editButton.textContent = "Edit";
+        editButton.setAttribute("data-testid", "edit-button");
+        editButton.addEventListener("click", () => {
+            openPromotionEditor(promotion);
+        });
+
+        actionCell.appendChild(editButton);
         row.appendChild(actionCell);
 
         tbody.appendChild(row);
@@ -516,5 +526,123 @@ document.addEventListener("DOMContentLoaded", () => {
         new URLSearchParams(window.location.search).get("id");
     if (initialPromotionId) {
         loadPromotion(initialPromotionId);
+    }
+});
+
+// Update Promotions UI
+
+function openPromotionEditor(promotion) {
+    const section = document.getElementById("edit-section");
+    const form = document.getElementById("edit-promotion-form");
+    const message = document.getElementById("edit-message");
+
+    const fields = [
+        "id", "name", "promotion_type", "value",
+        "product_id", "start_date", "end_date"
+    ];
+
+    fields.forEach((field) => {
+        form.elements.namedItem(field).value = promotion[field] ?? "";
+    });
+
+    form.elements.namedItem("active").checked = Boolean(promotion.active);
+
+    message.textContent = "";
+    message.dataset.state = "";
+    section.hidden = false;
+
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+
+async function savePromotionEdit(event) {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const message = document.getElementById("edit-message");
+    const button = form.querySelector('[data-testid="save-button"]');
+
+    message.textContent = "";
+    message.dataset.state = "";
+
+    const invalidField = form.querySelector(":invalid");
+
+    if (invalidField) {
+        message.textContent = "Please enter valid promotion details.";
+        message.dataset.state = "error";
+        invalidField.focus();
+        return;
+    }
+
+    const values = new FormData(form);
+    const id = Number(values.get("id"));
+    const productText = String(values.get("product_id") ?? "").trim();
+
+    const promotion = {
+        name: String(values.get("name")).trim(),
+        promotion_type: values.get("promotion_type"),
+        value: Number(values.get("value")),
+        product_id: productText === "" ? null : Number(productText),
+        start_date: values.get("start_date"),
+        end_date: values.get("end_date"),
+        active: form.elements.namedItem("active").checked
+    };
+
+    button.disabled = true;
+
+    try {
+        const response = await fetch(`/api/promotions/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json"
+            },
+            body: JSON.stringify(promotion)
+        });
+
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(result.message || "Update failed.");
+        }
+
+        await loadPromotions();
+
+        message.textContent = "Promotion updated successfully!";
+        message.dataset.state = "success";
+
+    } catch (error) {
+        message.textContent = `Update failed: ${error.message}`;
+        message.dataset.state = "error";
+    } finally {
+        button.disabled = false;
+    }
+}
+
+
+function cancelPromotionEdit() {
+    const section = document.getElementById("edit-section");
+    const form = document.getElementById("edit-promotion-form");
+    const message = document.getElementById("edit-message");
+
+    form.reset();
+    section.hidden = true;
+    message.textContent = "";
+    message.dataset.state = "";
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    const editForm = document.getElementById("edit-promotion-form");
+    const cancelButton = document.querySelector(
+        '[data-testid="cancel-button"]'
+    );
+
+    if (editForm) {
+        editForm.addEventListener("submit", savePromotionEdit);
+    }
+
+    if (cancelButton) {
+        cancelButton.addEventListener("click", cancelPromotionEdit);
     }
 });
