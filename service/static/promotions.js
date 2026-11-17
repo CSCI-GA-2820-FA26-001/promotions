@@ -47,8 +47,29 @@ function renderPromotions(promotions) {
         });
 
         const actionCell = document.createElement("td");
+        const actionButton = document.createElement("button");
         const viewButton = document.createElement("button");
         const deleteButton = document.createElement("button");
+
+        actionButton.type = "button";
+        actionButton.className = "promotion-action-btn";
+        actionButton.setAttribute(
+            "data-testid",
+            "promotion-action",
+        );
+        actionButton.dataset.promotionId = promotion.id;
+        actionButton.dataset.action = promotion.active
+            ? "deactivate"
+            : "activate";
+        actionButton.textContent = promotion.active
+            ? "Deactivate"
+            : "Activate";
+        actionButton.setAttribute(
+            "aria-label",
+            `${actionButton.textContent} ${promotion.name}`,
+        );
+
+        actionCell.appendChild(actionButton);
 
         viewButton.type = "button";
         viewButton.className = "view-details-btn";
@@ -154,6 +175,60 @@ async function loadPromotions(queryString = "") {
                 "list-error",
             );
         }
+    }
+}
+
+
+async function performPromotionAction(button) {
+    const promotionId = button.dataset.promotionId;
+    const action = button.dataset.action;
+    const actionMessage = document.getElementById("action-message");
+    const actionVerb = action === "activate" ? "activate" : "deactivate";
+
+    actionMessage.textContent = "";
+    actionMessage.dataset.state = "";
+    button.disabled = true;
+
+    try {
+        const response = await fetch(
+            `${PROMOTIONS_API}/${encodeURIComponent(promotionId)}/${action}`,
+            {
+                method: "PUT",
+                headers: { Accept: "application/json" },
+            },
+        );
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(
+                result.message || `Request failed (HTTP ${response.status}).`,
+            );
+        }
+
+        const expectedActive = action === "activate";
+        if (result.active !== expectedActive) {
+            throw new Error(
+                "The server did not confirm the requested Promotion state.",
+            );
+        }
+
+        const row = button.closest('[data-testid="promotion-row"]');
+        row.querySelector('[data-testid="promotion-active"]').textContent =
+            String(result.active);
+        button.dataset.action = result.active ? "deactivate" : "activate";
+        button.textContent = result.active ? "Deactivate" : "Activate";
+        button.setAttribute("aria-label", `${button.textContent} ${result.name}`);
+
+        const actionResult = action === "activate" ? "activated" : "deactivated";
+        actionMessage.textContent =
+            `Promotion ${promotionId} ${actionResult} successfully.`;
+        actionMessage.dataset.state = "success";
+    } catch (error) {
+        actionMessage.textContent =
+            `Unable to ${actionVerb} Promotion ${promotionId}: ${error.message}`;
+        actionMessage.dataset.state = "error";
+    } finally {
+        button.disabled = false;
     }
 }
 
@@ -425,6 +500,13 @@ document.addEventListener("DOMContentLoaded", () => {
             url.searchParams.set("id", promotionId);
             window.history.replaceState({}, "", url);
             loadPromotion(promotionId);
+        }
+
+        const button = event.target.closest(
+            '[data-testid="promotion-action"]',
+        );
+        if (button) {
+            performPromotionAction(button);
         }
     });
 

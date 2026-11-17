@@ -139,6 +139,36 @@ th {
     color: #b91c1c;
 }
 
+#action-message {
+    min-height: 20px;
+    margin: 0 0 12px;
+}
+
+#action-message[data-state="success"] {
+    color: #047857;
+}
+
+#action-message[data-state="error"] {
+    color: #b91c1c;
+}
+
+.promotion-action-btn[data-action="activate"] {
+    background: #047857;
+    color: white;
+    white-space: nowrap;
+}
+
+.promotion-action-btn[data-action="deactivate"] {
+    background: #b91c1c;
+    color: white;
+    white-space: nowrap;
+}
+
+.promotion-action-btn:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
 /* Read Promotion details */
 section[hidden] {
     display: none;

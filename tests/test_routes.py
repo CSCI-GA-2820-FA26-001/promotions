@@ -83,7 +83,7 @@ class TestPromotionService(TestCase):
         }
 
     def test_index(self):
-        """It should always serve the Promotions Admin UI at the root URL."""
+        """It should always serve the Admin UI at the root URL."""
         response = self.client.get(
             "/",
             headers={"Accept": "application/json"},
@@ -92,6 +92,8 @@ class TestPromotionService(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.mimetype, "text/html")
         self.assertIn(b"Promotions Admin", response.data)
+        self.assertIn(b"action-message", response.data)
+        self.assertIn(b"<th>Actions</th>", response.data)
         self.assertIn(b"create-promotion-form", response.data)
         self.assertIn(b"promotion-details", response.data)
 

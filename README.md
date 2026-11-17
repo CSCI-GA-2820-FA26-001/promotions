@@ -28,7 +28,7 @@ A promotion describes a discount that can apply to a single product or to the wh
 
 | Method   | URL                                  | Description                                                   |
 | -------- | ------------------------------------ | ------------------------------------------------------------- |
-| `GET`    | `/`                                  | Promotions admin UI for creating, listing, and viewing Promotions |
+| `GET`    | `/`                                  | Promotions Admin UI for creating, querying, viewing and managing promotions |
 | `GET`    | `/health`                            | Liveness/readiness probe; returns `200` with `{"status": "OK"}` |
 | `GET`    | `/apidocs/`                          | Swagger UI documenting the endpoints and data models          |
 | `POST`   | `/api/promotions`                    | Create a promotion; returns `201` with a `Location` header    |
@@ -39,11 +39,21 @@ A promotion describes a discount that can apply to a single product or to the wh
 | `PUT`    | `/api/promotions/<id>/activate`      | Set `active` to `true`; `404` if it does not exist            |
 | `PUT`    | `/api/promotions/<id>/deactivate`    | Set `active` to `false`; `404` if it does not exist           |
 
-The REST API uses [Flask-RESTX](https://flask-restx.readthedocs.io/) under `/api`; the interactive Swagger documentation is at `/apidocs/` (the raw spec is at `/api/swagger.json`). The root URL `/` serves the shared Promotions admin UI, where you can create and list Promotions or view a record's details through the existing `GET /api/promotions/<id>` endpoint. `/health` reports service health for Kubernetes probes.
+The REST API is built with [Flask-RESTX](https://flask-restx.readthedocs.io/) and lives under `/api`; the interactive Swagger documentation is at `/apidocs/` (the raw spec is at `/api/swagger.json`). The root URL `/` serves the shared Promotions Admin UI, where you can create and query promotions, view a record's details, activate or deactivate it, and delete it. `/health` reports service health for Kubernetes probes.
 
 `GET /api/promotions` accepts the query parameters `id`, `promotion_type`, `value`, `product_id`, `start_date`, `end_date` and `active`. Multiple parameters are combined with AND, unknown parameters are ignored, and an unparseable value returns `400`.
 
-To display an existing record, select **View details** in the table or open `/?id=<promotion-id>`. The Read Selenium BDD scenario creates a Promotion through the Admin UI, verifies its details, then removes the test record through the browser-based Swagger UI:
+### Managing promotion status in the Admin UI
+
+Use **Activate** or **Deactivate** in a promotion's Action column. The UI shows a success or error message and updates the displayed active status only after the service confirms the action.
+
+The Action UI BDD scenarios create their test promotions through the Create form and clean them up through the browser-based Swagger UI. The failure scenario simulates an unsuccessful action response in the browser. Run the scenarios with:
+
+```bash
+BASE_URL=http://localhost:8080 behave features/action_promotions.feature
+```
+
+To display a Promotion's details, select **View details** in the list or open `/?id=<promotion-id>`. The Read Selenium BDD scenario creates a Promotion through the Admin UI, verifies its details, then removes it through the browser-based Swagger UI:
 
 ```bash
 BASE_URL=http://localhost:8080 behave features/read_promotion.feature
