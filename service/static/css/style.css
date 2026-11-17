@@ -124,3 +124,17 @@ th {
 #create-message[data-state="error"] {
     color: #b91c1c;
 }
+
+/* Delete Promotion */
+.delete-button {
+    background: #b91c1c;
+    color: white;
+}
+
+#delete-message[data-state="success"] {
+    color: #047857;
+}
+
+#delete-message[data-state="error"] {
+    color: #b91c1c;
+}
