@@ -20,8 +20,19 @@ and SQL database
 """
 import sys
 from flask import Flask
+from flask_restx import Api
 from service import config
 from service.common import log_handlers
+
+# Flask-RESTX API, bound to the app in create_app(). The REST endpoints live
+# under /api and the Swagger documentation is served at /apidocs/.
+api = Api(
+    version="1.0.0",
+    title="Promotions REST API Service",
+    description="This is the Promotions service.",
+    doc="/apidocs/",
+    prefix="/api",
+)
 
 
 ############################################################
@@ -37,6 +48,7 @@ def create_app():
     # pylint: disable=import-outside-toplevel
     from service.models import db
     db.init_app(app)
+    api.init_app(app)
 
     with app.app_context():
         # Dependencies require we import the routes AFTER the Flask app is created
