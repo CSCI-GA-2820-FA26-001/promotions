@@ -9,6 +9,7 @@ from selenium import webdriver
 WAIT_SECONDS = int(getenv("WAIT_SECONDS", "30"))
 BASE_URL = getenv("BASE_URL", "http://localhost:8080")
 DRIVER = getenv("DRIVER", "chrome").lower()
+SELENIUM_REMOTE_URL = getenv("SELENIUM_REMOTE_URL")
 
 
 def before_all(context):
@@ -37,6 +38,11 @@ def get_chrome():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--headless")
+    if SELENIUM_REMOTE_URL:
+        return webdriver.Remote(
+            command_executor=SELENIUM_REMOTE_URL,
+            options=options,
+        )
     return webdriver.Chrome(options=options)
 
 
@@ -46,7 +52,13 @@ def get_firefox():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--headless")
+    if SELENIUM_REMOTE_URL:
+        return webdriver.Remote(
+            command_executor=SELENIUM_REMOTE_URL,
+            options=options,
+        )
     return webdriver.Firefox(options=options)
+
 
 def after_scenario(context, scenario):
     """Remove browser mock after each scenario."""
