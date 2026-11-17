@@ -192,7 +192,7 @@ def step_verify_matching_promotions(context, promotion_type):
     """Verify that all displayed Promotions match the query."""
     rows = WebDriverWait(context.driver, context.wait_seconds).until(
         expected_conditions.presence_of_all_elements_located(
-            (By.CSS_SELECTOR, "#search-results tr")
+            (By.CSS_SELECTOR, "#promotion-list tr")
         )
     )
 
@@ -215,7 +215,7 @@ def step_verify_no_promotions(context):
 
     rows = context.driver.find_elements(
         By.CSS_SELECTOR,
-        "#search-results tr",
+        "#promotion-list tr",
     )
 
     assert len(rows) == 0
@@ -240,7 +240,7 @@ def step_verify_full_list(context):
     """Verify that the full Promotion list is restored."""
     rows = WebDriverWait(context.driver, context.wait_seconds).until(
         expected_conditions.presence_of_all_elements_located(
-            (By.CSS_SELECTOR, "#search-results tr")
+            (By.CSS_SELECTOR, "#promotion-list tr")
         )
     )
 

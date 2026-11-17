@@ -23,7 +23,7 @@ and Delete Promotions
 
 from datetime import date
 from decimal import Decimal, InvalidOperation
-from flask import abort, jsonify, request
+from flask import abort, jsonify, render_template, request
 from flask import current_app as app  # Import Flask application
 from flask_restx import Resource, fields
 from service import api  # pylint: disable=cyclic-import
@@ -41,8 +41,8 @@ from service.common import status  # HTTP Status Codes
 ######################################################################
 @app.route("/")
 def index():
-    """Serve the Promotions admin UI"""
-    return app.send_static_file("index.html")
+    """Serve the Promotions Admin UI."""
+    return render_template("index.html"), status.HTTP_200_OK
 
 
 ######################################################################
@@ -107,16 +107,9 @@ promotion_model = api.inherit(
     "Promotion",
     create_model,
     {
-        "id": fields.Integer(
-            readOnly=True,
-            description="The unique id assigned internally by the service",
-        ),
-        "created_at": fields.DateTime(
-            readOnly=True, description="When the Promotion was created"
-        ),
-        "updated_at": fields.DateTime(
-            readOnly=True, description="When the Promotion was last updated"
-        ),
+        "id": fields.Integer(readOnly=True, description="The unique id assigned internally by the service"),
+        "created_at": fields.DateTime(readOnly=True, description="When the Promotion was created"),
+        "updated_at": fields.DateTime(readOnly=True, description="When the Promotion was last updated"),
     },
 )
 
@@ -130,10 +123,7 @@ LIST_PARAMS = {
     },
     "value": {"description": "Filter by discount value", "type": "number"},
     "product_id": {"description": "Filter by product id", "type": "integer"},
-    "start_date": {
-        "description": "Filter by start date (YYYY-MM-DD)",
-        "type": "string",
-    },
+    "start_date": {"description": "Filter by start date (YYYY-MM-DD)", "type": "string"},
     "end_date": {"description": "Filter by end date (YYYY-MM-DD)", "type": "string"},
     "active": {"description": "Filter by active flag", "type": "boolean"},
 }
@@ -159,9 +149,7 @@ class PromotionCollection(Resource):
         app.logger.info("Request to list Promotions")
 
         filters = _parse_filters(request.args)
-        promotions = (
-            Promotion.find_by_attributes(**filters) if filters else Promotion.all()
-        )
+        promotions = Promotion.find_by_attributes(**filters) if filters else Promotion.all()
         results = [promotion.serialize() for promotion in promotions]
 
         return results, status.HTTP_200_OK
@@ -184,9 +172,7 @@ class PromotionCollection(Resource):
         promotion.deserialize(request.get_json())
         promotion.create()
 
-        location = api.url_for(
-            PromotionResource, promotion_id=promotion.id, _external=True
-        )
+        location = api.url_for(PromotionResource, promotion_id=promotion.id, _external=True)
         return promotion.serialize(), status.HTTP_201_CREATED, {"Location": location}
 
 

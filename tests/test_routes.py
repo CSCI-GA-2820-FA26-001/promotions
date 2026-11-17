@@ -83,12 +83,27 @@ class TestPromotionService(TestCase):
         }
 
     def test_index(self):
-        """It should serve the Promotions admin UI"""
-        response = self.client.get("/")
+        """It should always serve the Admin UI at the root URL."""
+        response = self.client.get(
+            "/",
+            headers={"Accept": "application/json"},
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("text/html", response.content_type)
+        self.assertEqual(response.mimetype, "text/html")
         self.assertIn(b"Promotions Admin", response.data)
+
+    def test_index_html(self):
+        """It should serve the Admin UI to browsers."""
+        response = self.client.get(
+            "/",
+            headers={"Accept": "text/html"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.mimetype, "text/html")
+        self.assertIn(b"Promotions Admin", response.data)
+        self.assertIn(b'id="promotion-list"', response.data)
 
     def test_health(self):
         """It should report that the service is healthy"""
@@ -122,9 +137,7 @@ class TestPromotionService(TestCase):
 
     def test_create_promotion_requires_json(self):
         """It should reject requests without JSON content type"""
-        response = self.client.post(
-            "/api/promotions", data="{}", content_type="text/plain"
-        )
+        response = self.client.post("/api/promotions", data="{}", content_type="text/plain")
 
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
         self.assertEqual(Promotion.query.count(), 0)
@@ -461,10 +474,7 @@ class TestPromotionService(TestCase):
             },
         )
         self.assertEqual(set(spec["paths"]["/promotions"]), {"get", "post"})
-        self.assertEqual(
-            set(spec["paths"]["/promotions/{promotion_id}"]),
-            {"get", "put", "delete", "parameters"},
-        )
+        self.assertEqual(set(spec["paths"]["/promotions/{promotion_id}"]), {"get", "put", "delete", "parameters"})
         self.assertLessEqual({"Promotion", "PromotionCreate"}, set(spec["definitions"]))
 
     def test_old_paths_are_gone(self):
@@ -501,9 +511,7 @@ class TestPromotionService(TestCase):
 
     def test_json_error_unsupported_media_type(self):
         """It should return a JSON 415 when the Content-Type is not JSON"""
-        response = self.client.post(
-            "/api/promotions", data="{}", content_type="text/plain"
-        )
+        response = self.client.post("/api/promotions", data="{}", content_type="text/plain")
 
         self._assert_json_error(response, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
@@ -511,9 +519,7 @@ class TestPromotionService(TestCase):
         """It should return a JSON 400 for invalid data, bad JSON and bad filters"""
         cases = (
             self.client.post("/api/promotions", json={"name": "Incomplete"}),
-            self.client.post(
-                "/api/promotions", data='{"name":', content_type="application/json"
-            ),
+            self.client.post("/api/promotions", data='{"name":', content_type="application/json"),
             self.client.get("/api/promotions?active=maybe"),
         )
         for response in cases:

@@ -95,3 +95,32 @@ td {
 th {
     background: #f9fafb;
 }
+/* Create Promotion form */
+#create-section .search-form p {
+    margin: 0;
+}
+
+#create-section label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+#create-section input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+#create-section [data-testid="create-button"] {
+    justify-self: start;
+    background: #2563eb;
+    color: white;
+}
+
+#create-message[data-state="success"] {
+    color: #047857;
+}
+
+#create-message[data-state="error"] {
+    color: #b91c1c;
+}
