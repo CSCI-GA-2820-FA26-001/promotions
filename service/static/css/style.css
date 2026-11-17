@@ -138,3 +138,40 @@ th {
 #delete-message[data-state="error"] {
     color: #b91c1c;
 }
+
+/* Read Promotion details */
+section[hidden] {
+    display: none;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 16px;
+}
+
+.details-grid div {
+    min-width: 0;
+}
+
+.details-grid dt {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-bottom: 4px;
+}
+
+.details-grid dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.view-details-btn {
+    background: #2563eb;
+    color: white;
+    white-space: nowrap;
+}
+
+button:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
+}
