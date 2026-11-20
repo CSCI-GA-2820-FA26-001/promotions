@@ -1,0 +1,137 @@
+---
+#
+# Continuous Deployment pipeline for the promotions service.
+#
+#   clone ─┬─ lint ──┬─ build ── deploy ── behave
+#          └─ tests ─┘
+#
+# git-clone and buildah come from the openshift-pipelines namespace (cluster
+# resolver). The other tasks are defined in tasks.yaml.
+#
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: cd-pipeline
+  labels:
+    app: promotions
+spec:
+  description: Clone, lint, test, build, deploy and BDD-test the promotions service.
+  workspaces:
+    - name: pipeline-workspace
+  params:
+    - name: GIT_REPO
+      description: Git repository to build
+      type: string
+      default: "https://github.com/CSCI-GA-2820-FA26-001/promotions.git"
+    - name: GIT_REF
+      description: Branch, tag or SHA to build
+      type: string
+      default: "master"
+    - name: APP_NAME
+      description: Name of the Deployment to roll out
+      type: string
+      default: "promotions"
+    - name: IMAGE_NAME
+      description: Image to build and deploy (internal OpenShift registry)
+      type: string
+      default: "image-registry.openshift-image-registry.svc:5000/$(context.pipelineRun.namespace)/promotions:latest"
+    - name: BASE_URL
+      description: URL behave tests run against (in-cluster Service by default)
+      type: string
+      default: "http://promotions"
+
+  tasks:
+    # 1. Clone the repository into the shared workspace
+    - name: clone
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: URL
+          value: $(params.GIT_REPO)
+        - name: REVISION
+          value: $(params.GIT_REF)
+        - name: DELETE_EXISTING
+          value: "true"
+      workspaces:
+        - name: output
+          workspace: pipeline-workspace
+
+    # 2. Lint (runs in parallel with tests)
+    - name: lint
+      runAfter:
+        - clone
+      taskRef:
+        kind: Task
+        name: flake8
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+
+    # 3. Unit tests (runs in parallel with lint)
+    - name: tests
+      runAfter:
+        - clone
+      taskRef:
+        kind: Task
+        name: pytest-env
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+
+    # 4. Build the image and push it to the internal registry
+    - name: build
+      runAfter:
+        - lint
+        - tests
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: IMAGE
+          value: $(params.IMAGE_NAME)
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+
+    # 5. Deploy the new image to OpenShift
+    - name: deploy
+      runAfter:
+        - build
+      taskRef:
+        kind: Task
+        name: deploy-image
+      params:
+        - name: image_name
+          value: $(params.IMAGE_NAME)
+        - name: deployment_name
+          value: $(params.APP_NAME)
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+
+    # 6. BDD tests against the running service
+    - name: behave
+      runAfter:
+        - deploy
+      taskRef:
+        kind: Task
+        name: behave
+      params:
+        - name: base_url
+          value: $(params.BASE_URL)
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
