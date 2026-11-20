@@ -1,0 +1,234 @@
+#
+# Custom Tekton Tasks for the promotions CD pipeline.
+#
+# git-clone and buildah are not defined here; they come from the
+# openshift-pipelines namespace via the cluster resolver (see pipeline.yaml).
+#
+# All Python tasks install dependencies into a virtualenv under /tmp because
+# OpenShift runs containers with an arbitrary non-root UID.
+#
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: flake8
+  labels:
+    app: promotions
+spec:
+  description: Lint the Python source with flake8.
+  workspaces:
+    - name: source
+  params:
+    - name: image
+      description: Python image used to run the linter
+      type: string
+      default: "python:3.12-slim"
+  steps:
+    - name: flake8
+      image: $(params.image)
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: HOME
+          value: /tmp
+        - name: PIP_NO_CACHE_DIR
+          value: "1"
+      script: |
+        #!/bin/bash
+        set -euo pipefail
+        python -m venv /tmp/venv
+        source /tmp/venv/bin/activate
+        python -m pip install --quiet --upgrade pip pipenv
+        pipenv requirements --dev > /tmp/requirements.txt
+        python -m pip install --quiet -r /tmp/requirements.txt
+
+        # Same checks as .github/workflows/ci.yml
+        flake8 service tests --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 service tests --count --max-complexity=10 --max-line-length=127 --statistics
+
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: pytest-env
+  labels:
+    app: promotions
+spec:
+  description: Run the unit tests with pytest against a throwaway PostgreSQL sidecar.
+  workspaces:
+    - name: source
+  params:
+    - name: image
+      description: Python image used to run the tests
+      type: string
+      default: "python:3.12-slim"
+    - name: database_uri
+      description: Database connection string used by the tests
+      type: string
+      default: "postgresql+psycopg://tester:tester@localhost:5432/testdb"
+    - name: args
+      description: Extra arguments passed to pytest
+      type: array
+      default: []
+  sidecars:
+    # sclorg image supports OpenShift's arbitrary UIDs (the docker.io postgres image does not)
+    - name: postgres
+      image: quay.io/sclorg/postgresql-16-c9s:latest
+      env:
+        - name: POSTGRESQL_USER
+          value: tester
+        - name: POSTGRESQL_PASSWORD
+          value: tester
+        - name: POSTGRESQL_DATABASE
+          value: testdb
+      readinessProbe:
+        tcpSocket:
+          port: 5432
+        periodSeconds: 2
+  steps:
+    - name: pytest
+      image: $(params.image)
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: HOME
+          value: /tmp
+        - name: PIP_NO_CACHE_DIR
+          value: "1"
+        - name: DATABASE_URI
+          value: $(params.database_uri)
+        - name: COVERAGE_FILE
+          value: /tmp/.coverage
+        - name: RETRY_COUNT
+          value: "5"
+      script: |
+        #!/bin/bash
+        set -euo pipefail
+        python -m venv /tmp/venv
+        source /tmp/venv/bin/activate
+        python -m pip install --quiet --upgrade pip pipenv
+        pipenv requirements --dev > /tmp/requirements.txt
+        python -m pip install --quiet -r /tmp/requirements.txt
+
+        pytest --pspec --cov=service --cov-fail-under=95 --disable-warnings -p no:cacheprovider "$@"
+      args:
+        - $(params.args[*])
+
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: deploy-image
+  labels:
+    app: promotions
+spec:
+  description: Deploy the freshly built image to OpenShift using the manifests in the repo.
+  workspaces:
+    - name: source
+  params:
+    - name: image_name
+      description: Fully qualified image to deploy
+      type: string
+    - name: old_image_name
+      description: Image reference in deployment.yaml that gets replaced
+      type: string
+      default: "cluster-registry:5000/promotions:1.0"
+    - name: manifests
+      description: Space-separated list of manifest files to apply, relative to the repo root
+      type: string
+      default: "k8s/deployment.yaml k8s/service.yaml"
+    - name: deployment_name
+      description: Name of the Deployment to wait on
+      type: string
+      default: "promotions"
+  steps:
+    - name: deploy
+      image: quay.io/openshift/origin-cli:latest
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/bin/bash
+        set -euo pipefail
+
+        echo "Pointing deployment at $(params.image_name)"
+        # Rewrite in /tmp so the shared workspace stays unchanged.
+        # Also drop hard-coded runAsUser/runAsGroup: OpenShift's restricted-v2 SCC
+        # rejects fixed UIDs and assigns one from the namespace range instead.
+        mkdir -p /tmp/manifests
+        for f in $(params.manifests); do
+          sed -e "s|$(params.old_image_name)|$(params.image_name)|g" \
+              -e '/runAsUser:/d' -e '/runAsGroup:/d' \
+              "$f" > "/tmp/manifests/$(basename "$f")"
+        done
+
+        oc apply -f /tmp/manifests/
+        # Force a new rollout in case the image tag (e.g. :latest) did not change
+        oc rollout restart deployment/$(params.deployment_name)
+        oc rollout status deployment/$(params.deployment_name) --timeout=180s
+
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: behave
+  labels:
+    app: promotions
+spec:
+  description: Run the BDD tests with behave against the deployed service.
+  workspaces:
+    - name: source
+  params:
+    - name: image
+      description: Python image used to run behave
+      type: string
+      default: "python:3.12-slim"
+    - name: base_url
+      description: URL of the deployed service under test
+      type: string
+    - name: wait_seconds
+      description: Seconds Selenium waits for elements
+      type: string
+      default: "30"
+    - name: driver
+      description: Browser to use (chrome or firefox)
+      type: string
+      default: "chrome"
+    - name: args
+      description: Extra arguments passed to behave
+      type: array
+      default: []
+  sidecars:
+    # Remote browser; features/environment.py connects to it via SELENIUM_REMOTE_URL
+    - name: selenium
+      image: docker.io/selenium/standalone-chrome:latest
+      readinessProbe:
+        httpGet:
+          path: /status
+          port: 4444
+        periodSeconds: 2
+  steps:
+    - name: behave
+      image: $(params.image)
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: HOME
+          value: /tmp
+        - name: PIP_NO_CACHE_DIR
+          value: "1"
+        - name: BASE_URL
+          value: $(params.base_url)
+        - name: WAIT_SECONDS
+          value: $(params.wait_seconds)
+        - name: DRIVER
+          value: $(params.driver)
+        - name: SELENIUM_REMOTE_URL
+          value: "http://localhost:4444/wd/hub"
+      script: |
+        #!/bin/bash
+        set -euo pipefail
+        python -m venv /tmp/venv
+        source /tmp/venv/bin/activate
+        python -m pip install --quiet --upgrade pip pipenv
+        pipenv requirements --dev > /tmp/requirements.txt
+        python -m pip install --quiet -r /tmp/requirements.txt
+
+        behave "$@"
+      args:
+        - $(params.args[*])

@@ -1,0 +1,16 @@
+---
+# Shared workspace for the CD pipeline.
+# Every task in cd-pipeline mounts this claim, so the source cloned by the
+# first task is visible to lint, tests, build, deploy and behave.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pipelinerun
+  labels:
+    app: promotions
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
